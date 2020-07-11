@@ -1,0 +1,318 @@
+{% extends 'tasktracker/base.html' %}
+{% block title %}
+    Tasklist
+{% endblock %}
+
+{% block settings  %}
+    <div class="btn-group my-2 mx-2" role="group" aria-label="Button group with nested dropdown">
+        <button type="button" class="btn btn-secondary">Day</button>
+        <button type="button" class="btn btn-secondary">Week</button>
+        <button type="button" class="btn btn-secondary">Month</button>
+        <button type="button" class="btn btn-secondary">Year</button>
+        <button type="button" class="btn btn-secondary">Global</button>
+        <button type="button" class="btn btn-secondary">Free</button>
+    
+        <div class="btn-group" role="group">
+            <button id="btnGroupDrop1" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Filter
+            </button>
+            <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
+                <a class="dropdown-item" href="#">All</a>
+                <a class="dropdown-item" href="#">Habits</a>
+                {% for tag in tags %}
+                <a class="dropdown-item">{{tags}}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal trigger -->
+    <div class="btn-group float-right my-2 mx-2" role="group" aria-label="Basic example">
+        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#create_task_modal">Create task</button>
+        <button type="button" class="btn btn-secondary">Load tasks</button>
+        <button type="button" class="btn btn-secondary">Synchronize</button>
+    </div>
+  
+    <!-- Modal -->
+    <div class="modal fade bd-modal-lg" id="create_task_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Enter task parameters</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group" id="task_description_area">
+                        <label for="exampleFormControlTextarea1">Task description</label>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="2"></textarea>
+                    </div>
+                </form>
+
+                <!-- Task settings -->
+                <div class="btn-group" role="group">
+                    
+                    <!-- Priority -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle mr-2" type="button" id="task_priority_dropdown_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Priority</button>
+                        <div class="dropdown-menu" aria-labelledby="task_priority_dropdown_button" id="dropdownMenu1">
+                            <a class="dropdown-item" href="#">Low</a>
+                            <a class="dropdown-item" href="#">Medium</a>
+                            <a class="dropdown-item" href="#">High</a>
+                        </div>
+                    </div>
+
+                    <!-- Traking type  -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle mx-2" type="button" id="traking_type_dropdown_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Traking</button>
+                        <div class="dropdown-menu" aria-labelledby="traking_type_dropdown_button">
+                            <a class="dropdown-item" href="#">Untracking</a>
+                            <a class="dropdown-item" href="#">Fixed</a>
+                            <a class="dropdown-item" href="#">Period</a>
+                        </div>
+                    </div>
+
+                    <!-- Period -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle mx-2" type="button" id="task_period_dropdown_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Period</button>
+                        <div class="dropdown-menu" aria-labelledby="task_period_dropdown_button">
+                            <a class="dropdown-item" href="#">Day</a>
+                            <a class="dropdown-item" href="#">Week</a>
+                            <a class="dropdown-item" href="#">Month</a>
+                            <a class="dropdown-item" href="#">Year</a>
+                            <a class="dropdown-item" href="#">Decade</a>
+                            <a class="dropdown-item" href="#">Global</a>
+                            <a class="dropdown-item" href="#">Free</a>
+                        </div>
+                    </div>
+
+                    <!-- Is habit -->
+                    <div class="custom-control custom-checkbox mx-3 my-2">
+                        <input type="checkbox" class="custom-control-input" id="is_habit">
+                        <label class="custom-control-label" for="is_habit">Habit</label>
+                    </div>
+
+                </div>
+
+                <!-- Active days -->
+                <div class="input-group date mr-2 my-2" id="active_days_form">
+                    <input type="text mr-sm-2" class="form-control" placeholder="Active days" id="active_days_input1"/>
+                </div>
+
+                <!-- Exclude selected -->
+                <div class="custom-control custom-checkbox mr-2 my-2">
+                    <input type="checkbox" class="custom-control-input" id="exclude_selected">
+                    <label class="custom-control-label" for="exclude_selected">Exclude selected</label>
+                </div>
+
+                <!-- Datetime start -->
+                <div class="mr-2 my-2">
+                    <label>Datetime start: </label>
+                </div>
+            
+                <div class="input-group date mr-2 my-2" id="datetimepicker1" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker1" id="datetimeinput1"/>
+                    <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                </div>
+                
+                <script>
+                    $(function () {
+                        $("#datetimepicker1").datetimepicker();
+                    });
+                </script>
+
+                <!-- Datetime end -->
+                <div class="mr-2 my-2">
+                    <label>Datetime end: </label>
+                </div>
+
+                <div class="input-group date mr-2 my-2" id="datetimepicker2" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker2" id="datetimeinput2"/>
+                    <div class="input-group-append" data-target="#datetimepicker2" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                </div>
+
+                <script>
+                    $(function () {
+                        $("#datetimepicker2").datetimepicker();
+                    });
+                </script>
+
+                <!-- Decomposite task -->
+                <div class="mr-2 my-2">
+                    <label>Parent task: </label>
+                    <form class="form-inline" id="parent_task_form">
+                        <input class="form-control mr-sm-2" type="search" placeholder="Parent task" id="parent_task_input">
+                    </form>    
+                </div>
+
+                <!-- Template --> 
+                <div class="mr-2 my-2">
+                    <label>Template: </label>
+                </div>
+
+                <div class="mr-2 my-2">
+
+                    <!-- Period -->
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="template_period_dropdown_button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Period</button>
+                        <div class="dropdown-menu" aria-labelledby="template_period_dropdown_button">
+                            <a class="dropdown-item" href="#">Day</a>
+                            <a class="dropdown-item" href="#">Week</a>
+                            <a class="dropdown-item" href="#">Month</a>
+                            <a class="dropdown-item" href="#">Year</a>
+                        </div>
+                    </div>
+
+                    <!-- Active days -->
+                    <div class="input-group date mr-2 my-2" id="active_days_form2">
+                        <input type="text mr-sm-2" class="form-control" placeholder="Active days" id="active_days_input2"/>
+                    </div>
+
+                    <!-- Exclude selected -->
+                    <div class="custom-control custom-checkbox mr-2 my-2">
+                        <input type="checkbox" class="custom-control-input" id="exclude_selected2">
+                        <label class="custom-control-label" for="exclude_selected2">Exclude selected</label>
+                    </div>
+
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" id="create_task_modal_close_button">Close</button>
+            <button type="button" class="btn btn-primary"id="create_task_modal_save_button">Save changes</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <ul class="list-group pmd-list pmd-card-list pmd-list-avatar " id="current_tasklist">
+        
+        
+        <!-- {% for task in tasks %}
+        <li class="list-group-item d-flex align-items-center">
+            <a href="javascript:void(0);" class="pmd-avatar-list-img"> 
+                <img alt="40x40" data-src="holder.js/40x40" class="img-fluid" src="img/40x40.png" data-holder-rendered="true">
+            </a>
+            <div class="media-body">{{task}}</div>
+            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>
+                <label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">
+                </label>
+            </div>
+        </li>
+        {% endfor %} -->
+        
+        <!-- <li class="list-group-item d-flex align-items-center">
+            <div class="media-body"> List item with avatar and action </div>
+            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck1">
+                <label class="custom-control-label" for="defaultCheck1">
+                </label>
+            </div> 
+        </li>
+        
+        <li class="list-group-item d-flex align-items-center">
+            <div class="media-body"> List item with avatar and action </div>
+            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+                <input class="custom-control-input" type="checkbox" value="unchecked" id="defaultCheck2">
+                <label class="custom-control-label" for="defaultCheck2">
+                </label>
+            </div>
+        </li> -->
+    </ul>
+
+    <script>
+        //update all dropdowns
+        $(".dropdown-menu a ").click(function () {
+            $(this).parents(".dropdown").find('.btn').text($(this).text());
+        });
+
+        //save changes button
+        $("#create_task_modal_save_button").click(function () {
+            $.post("/tasklist/",
+            JSON.stringify ({
+                "desr"     :                    $("#exampleFormControlTextarea1").val(),
+                "priority" :                    $("#task_priority_dropdown_button").text(),
+                "traking"  :                    $("#traking_type_dropdown_button").text(),
+                "period"   :                    { 
+                                                    "period_type" :       $("#task_period_dropdown_button").text(),
+                                                    "active_intervals" :  $("#active_days_input1").val(),
+                                                    "exclude_selected" :  $("#exclude_selected").is(':checked'),
+                },
+                "is_habit" :                    $("#is_habit").is(':checked'),
+                "datetime_start" :              $("#datetimeinput1").val(),
+                "datetime_end" :                $("#datetimeinput2").val(),
+                "parent_task" :                 $("#parent_task_input").text(),
+                "template" :                    {
+                                                    "period_type" :       $("#template_period_dropdown_button").text(),
+                                                    "active_intervals" :  $("#active_days_input2").val(),
+                                                    "exclude_selected" :  $("#exclude_selected2").is(':checked')
+                }
+            }),
+            function(data, status) {
+                alert("saved sucess")
+            },
+            'json');
+        });
+
+        jQuery(document).ready(function($) {
+            now = new Date();
+            date_url = "/tasklist/d";
+            date_url += (now.getDate() < 10) ? ('0' + String(now.getDate())) : String(now.getDate());
+            date_url += (now.getMonth() < 9) ? ('0' + String(now.getMonth() + 1)) : String(now.getMonth() + 1);
+            date_url += (String(now.getFullYear())).substring(2,4) + '/';
+            console.log(date_url)
+            //document.location.replace(date_url);
+            $.ajax({
+                type: "GET",
+                url: date_url,
+                success : function(tasks) {
+                    //tasks = data; //JSON.stringify(data)
+                    console.log("Прибыли данные: " +  tasks);
+                    console.log(typeof tasks);
+                    if (tasks["tasks"] !== undefined)
+                    {
+                        console.log(tasks["tasks"]);
+                        console.log(typeof tasks["tasks"]);
+                        for (var task in tasks["tasks"])
+                        {
+                            console.log(typeof task);
+                            var task_descr = JSON.parse(tasks["tasks"][task])
+                            console.log(task_descr);
+                            var task_str = task_descr["descriprion"] + ' - ' + task_descr["priority"]
+                            if (task_descr["task_begin"] !== undefined)
+                                task_str += ' - ' + task_descr["task_begin"]
+                            if (task_descr["task_end"] !== undefined)
+                                task_str += ' - ' + task_descr["task_end"]
+                            if (task_descr["lost_time"] !== undefined)
+                                task_str += ' - ' + task_descr["lost_time"]
+                            $("#current_tasklist").append(       
+                                '<li class="list-group-item d-flex align-items-center">' +
+                                    '<div class="media-body">'+ task_str + '</div>' + 
+                                    '<div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">' + 
+                                        '<input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>' +
+                                        '<label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">' + 
+                                        '</label>' + 
+                                    '</div>' + 
+                                '</li>'); 
+                        }
+                    }
+                }
+            });
+            // $.get(date_url, 
+            // JSON.stringify ({"Name", "1111"}), 
+            // function(data, status) {
+            //         //alert(response)
+            //     },
+            // 'json');
+        });
+    </script>
+
+{% endblock %}

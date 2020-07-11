@@ -1,0 +1,50 @@
+{% extends 'tasktracker/base_tasklist.html' %}
+{% block title %}
+    Tasklist
+{% endblock %}
+
+{% block tasklist  %}
+<!-- <ul class="list-group">
+    {% for task in tasks %}
+    <li class="list-group-item">{{task}}</li>
+    {% endfor %}
+</ul> -->
+    
+<!--single line list with avtar --> 
+<ul class="list-group pmd-list pmd-card-list pmd-list-avatar " id="current_tasklist">
+    {% for task in tasks %}
+    <li class="list-group-item d-flex align-items-center">
+        <a href="javascript:void(0);" class="pmd-avatar-list-img"> 
+            <img alt="40x40" data-src="holder.js/40x40" class="img-fluid" src="img/40x40.png" data-holder-rendered="true">
+        </a>
+        <div class="media-body">{{task}}</div>
+        <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+            <input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>
+            <label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">
+            </label>
+        </div>
+    </li>
+    {% endfor %}
+    
+    <!-- <li class="list-group-item d-flex align-items-center">
+        <div class="media-body"> List item with avatar and action </div>
+        <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+            <input class="custom-control-input" type="checkbox" value="" id="defaultCheck1">
+            <label class="custom-control-label" for="defaultCheck1">
+            </label>
+        </div> 
+    </li>
+    
+    <li class="list-group-item d-flex align-items-center">
+        <div class="media-body"> List item with avatar and action </div>
+        <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+            <input class="custom-control-input" type="checkbox" value="unchecked" id="defaultCheck2">
+            <label class="custom-control-label" for="defaultCheck2">
+            </label>
+        </div>
+    </li> -->
+</ul>
+{% endblock %}
+
+
+
