@@ -2,58 +2,11 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Task, PRIORYITY_TYPES, PERIOD_TYPES, TRAKING_TYPES
 import json
-from datetime import datetime
-
-def check_period(period_type, active_intervals):
-    period = Period.objects.get(period_type=period_type, active_intervals=active_intervals)
-    if period == None:
-        period = Period(period_type=period_type, active_intervals=active_intervals)
-        Period.save(period)
-
-    return period.id
-
-def check_template(period, automatic_addition_cur, automatic_addition_viev):
-    template = Template.objects.get(period=period, automatic_addition_cur=automatic_addition_cur, automatic_addition_viev=automatic_addition_viev)
-    if template == None:
-        template = Template(period=period, automatic_addition_cur=automatic_addition_cur, automatic_addition_viev=automatic_addition_viev)
-        Template.save(template)
-    
-    return template.id
-
-def prepare_period(val):
-    # period_type
-    for sh, lg in PERIOD_TYPES:
-        if val[0] == lg:
-            val[0] = sh
-            break
-    else: 
-        print('attribute error')
-        return
-    # active_intervals
-    ranges = re.findall(r'[0-9]{1,2}-[0-9]{1,2}', val[1])
-    val[1].remove(ranges)
-    ranges = [range(r.split('-')[0], r.split('-')[1]) for r in ranges]
-    active_intervals = val[1].split(',')
-    for r in ranges:
-        active_intervals.extend(r)
-    int_active_intervals = 0
-    for i in range(0,{ 'D' : 0, 'W' : 7, 'M' : 31, 'Y' : 7, 'C' : 0, 'G': 0, 'F' : 0 }[val[0]]):
-        if i in active_intervals:
-            int_active_intervals |= 1 << i
-    #exclude_selected
-    if val[2] == 'True':
-        int_active_intervals = ~int_active_intervals
-
-    return val[0], int_active_intervals
+from datetime import datetime, timezone
+import re
 
 def add_task(json_data):
-    need_update = False
-    
-    # debug
-    for data in json_data:
-        print(data, '=', json_data[data]) 
-
-    if not {'desr', 'priority', 'period', 'is_habit', 'traking_type'}.issubset(set(json_data)):
+    if not {'desr', 'priority', 'period', 'is_habit', 'traking'}.issubset(set(json_data)):
         print('attribute error')
         return
 
@@ -74,30 +27,65 @@ def add_task(json_data):
                 return
         # period        
         elif key == 'period':
-            period_type, active_intervals = prepare_period(val)
-            new_task.period = check_period(period_type, active_intervals) 
+            for sh, lg in PERIOD_TYPES:
+                if val == lg:
+                    new_task.period = sh
+                    break
+            else: 
+                print('attribute error')
+                return
+        elif key == 'traking':
+            for sh, lg in TRAKING_TYPES:
+                if val == lg:
+                    new_task.traking_type = sh
+                    break
+            else: 
+                print('attribute error')
+                return
         # is_habit   
         elif key == 'is_habit':
             new_task.is_habit = True if val == 'True' else False
-        elif key == 'datetime_start':
-            new_task.task_begin = val
-        elif key == 'datetime_end':
-            new_task.task_end = val
+        elif key == 'datetime_start' and val != '':
+            tmp_dt = datetime.strptime(val, "%m/%d/%Y %I:%M %p")
+            new_task.task_begin = tmp_dt
+        elif key == 'datetime_end' and val != '':
+            tmp_dt = datetime.strptime(val, "%m/%d/%Y %I:%M %p")
+            new_task.task_end = tmp_dt
         elif key == 'parent_task':
-           new_task.decomposite_task = val
+            pass
+            # tmp_dt = Task.objects.get(descriprion=val).id
+            # new_task.decomposite_task = tmp_dt
         # template
-        elif key == 'template':   
-            period_type, active_intervals = prepare_period(val)
-            new_task.period = check_period(period_type, active_intervals)  
-            new_task.tenplate = check_template(new_task.period, False, False)  
-    
-    if {'datetime_start', 'datetime_end'}.issubset(set(json_data)):
-        need_update = check_time()  
-    else:
-        need_update = True
-    Task.save(new_task)
+        elif key == 'template_intervals':   
+            if not {'active_intervals', 'exclude_selected'}.issubset(set(val)):
+                print('attribute error')
+                return
 
-    return need_update
+            # active_intervals
+            ranges = re.findall(r'[0-9]{1,2}-[0-9]{1,2}', val['active_intervals'])
+            active_intervals = val['active_intervals'].split(',')
+            for r in ranges:
+                active_intervals.remove(r)
+            active_intervals = list(map(int, active_intervals))
+            ranges = [range(int(r.split('-')[0]), int(r.split('-')[1])+1) for r in ranges]
+            for r in ranges:
+                active_intervals.extend(r)
+            int_active_intervals = 0
+            for i in range(0,{ 'D' : 7, 'W' : 4, 'M' : 12, 'Y' : 10, 'C' : 0, 'G': 0, 'F' : 0 }[new_task.period]):
+                if i in active_intervals:
+                    int_active_intervals |= 1 << (i - 1)
+            #exclude_selected
+            if val['exclude_selected'] == 'True':
+                int_active_intervals = ~int_active_intervals
+            new_task.template_intervals = int_active_intervals
+        elif key == 'template_counter':
+            new_task.template_counter = int(val)
+    
+    val = 4
+    Task.save(new_task)
+    val = 5
+    val = 10
+
 
 def check_time(period_type, start, end):
     res = False
@@ -158,44 +146,78 @@ def default_tasks():
         Task.objects.create(descriprion='workout', priority='M', is_habit=True, traking_type='U')
         Task.objects.create(descriprion='homework', priority='M', is_habit=True, traking_type='U')
         
-        Task.objects.create(period='D', descriprion='task1', priority='M', is_habit=True, traking_type='F')
-        Task.objects.create(period='D', descriprion='task2', priority='M', is_habit=True, traking_type='F')
-        Task.objects.create(period='D', descriprion='task3', priority='M', is_habit=True, traking_type='F')
-        Task.objects.create(period='D', descriprion='task4', priority='M', is_habit=True, traking_type='F')
-        
+        Task.objects.create(period='D', descriprion='task1', priority='M', is_habit=True, traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task2', priority='M', is_habit=True, traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task3', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 15, 0, 0, 0, 0))
+        Task.objects.create(period='D', descriprion='task4', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+        Task.objects.create(period='D', descriprion='task5', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+        Task.objects.create(period='D', descriprion='task6', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+        Task.objects.create(period='D', descriprion='task7', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+        Task.objects.create(period='D', descriprion='task8', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
+        Task.objects.create(period='D', descriprion='task9', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
+        Task.objects.create(period='M', descriprion='task10', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 8, 16, 0, 0, 0, 0))
+        Task.objects.create(period='Y', descriprion='task11', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2021, 8, 16, 0, 0, 0, 0))
+
         tasks = Task.objects.all()
     print(1, tasks)
 
 def get_tasks(list_type):
     if list_type[0] == 'd':
         day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
+        year = '20' + year
         now = datetime(int(year), int(month), int(day), 0, 0, 0, 0)
         tasks = Task.objects.filter(period='D')
+        # add tasks for specific period
+        # task_begin__year=now.year, task_begin__month=now.month, 
+        tasks2 = [repr(task) for task in tasks.filter(task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)]
+        # add template tasks
+        for task in tasks:
+            for repetition in range(0,task.template_counter):
+                for point in range(0,31):
+                    if task.template_intervals & (1 << point) and (task.task_begin - datetime.now(timezone.utc)).seconds > 0 :
+                        tasks2.append(repr(task)) 
     elif list_type[0] == 'w':
         week, month, year = list_type[1], list_type[2:4], list_type[4:6]
+        year = '20' + year
         now = datetime(int(year), int(month), 0, 0, 0, 0, 0) #todo
         tasks = Task.objects.filter(period='W')
+        tasks2 = [repr(task) for task in tasks.filter(period='W', task_begin__year=now.year, task_begin__month=now.month)]
+        for task in tasks:
+            for repetition in range(0,task.template_counter):
+                for point in range(0,4):
+                    if task.template_intervals & (1 << point):
+                        tasks2.append(repr(task))         
     elif list_type[0] == 'm':
         month, year = list_type[1:3], list_type[3:5]
-        now = datetime(int(year), int(month), 0, 0, 0, 0, 0) 
+        year = '20' + year
+        now = datetime(int(year), int(month), 1, 0, 0, 0, 0) 
         tasks = Task.objects.filter(period='M')
+        tasks2 = [repr(task) for task in tasks.filter(task_begin__year=now.year, task_begin__month=now.month)]
+        for task in tasks:
+            for repetition in range(0,task.template_counter):
+                for point in range(0,12):
+                    if task.template_intervals & (1 << point):
+                        tasks2.append(repr(task))   
     elif list_type[0] == 'y':
         year = list_type[1:3]
-        now = datetime(int(year), 0, 0, 0, 0, 0, 0) 
+        year = '20' + year
+        now = datetime(int(year), 0, 1, 0, 0, 0, 0) 
         tasks = Task.objects.filter(period='Y')
+        tasks2 = [repr(task) for task in tasks.filter(task_begin__year=now.year)]
+        for task in tasks:
+            for repetition in range(0,task.template_counter):
+                for point in range(0,10):
+                    if task.template_intervals & (1 << point):
+                        tasks2.append(repr(task))   
 
-    tasks = [repr(task) for task in tasks] 
-    print(2, tasks)
-    return tasks
+    return tasks2
 
 # ------------------------------------------------------------------------------  
 def general_task_list(request):
-    print("list_type1")
-    return task_list(request, None)       
+    default_tasks()
+    return render(request, 'tasktracker/base_tasklist.html') 
 
 def task_list(request, list_type):   
-    print("list_type")
-    print_date(list_type)
     if request.is_ajax():
         if request.method == 'POST':
             json_data = json.loads(request.body)
@@ -206,8 +228,8 @@ def task_list(request, list_type):
         print(3, tasks)
         return HttpResponse(tasks, content_type="application/json")
     else:
-        default_tasks()
-        return render(request, 'tasktracker/base_tasklist.html') 
+        return HttpResponse(status=204)
+
 
 def calendar_view(request):
     print('calendar work')
