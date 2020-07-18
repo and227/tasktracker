@@ -166,15 +166,19 @@ def get_tasks(list_type):
         day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
         year = '20' + year
         now = datetime(int(year), int(month), int(day), 0, 0, 0, 0)
-        tasks = Task.objects.filter(period='D')
+        tasks = Task.objects.filter(period='D') 
         # add tasks for specific period
         # task_begin__year=now.year, task_begin__month=now.month, 
         tasks2 = [repr(task) for task in tasks.filter(task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)]
+        tasks.exclude(task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)
         # add template tasks
         for task in tasks:
-            for repetition in range(0,task.template_counter):
-                for point in range(0,31):
-                    if task.template_intervals & (1 << point) and (task.task_begin - datetime.now(timezone.utc)).seconds > 0 :
+            if now.day >= task.task_begin.day and ((task.template_counter == 0 or now.day <= (task.task_begin.day + task.template_counter))): # limited counter
+                if task.template_intervals & int('80000000', 16):
+                    if task.template_intervals & (1 << (now.day - 1)): # date template
+                        tasks2.append(repr(task)) 
+                else:
+                    if task.template_intervals & (1 << (now.weekday - 1)): # weekday template
                         tasks2.append(repr(task)) 
     elif list_type[0] == 'w':
         week, month, year = list_type[1], list_type[2:4], list_type[4:6]
