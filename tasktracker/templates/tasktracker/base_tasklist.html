@@ -3,7 +3,7 @@
     Tasklist
 {% endblock %}
 
-{% block settings  %}
+{% block settings %}
     <div class="btn-group my-2 mx-2" role="group" aria-label="Button group with nested dropdown" id="current_period">
         <button type="button" class="btn btn-secondary">Day</button>
         <button type="button" class="btn btn-secondary">Week</button>
@@ -11,8 +11,8 @@
         <button type="button" class="btn btn-secondary">Year</button>
         <button type="button" class="btn btn-secondary">Global</button>
         <button type="button" class="btn btn-secondary">Free</button>
-        <button type="button" class="btn btn-secondary">Previous</button>
-        <button type="button" class="btn btn-secondary"><< Current</button>
+        <button type="button" class="btn btn-secondary"><< Prev</button>
+        <button type="button" class="btn btn-secondary">Current</button>
         <button type="button" class="btn btn-secondary">Next >></button>
     
         <div class="btn-group" role="group">
@@ -26,156 +26,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-        Date.prototype.getWeek = function() {
-            var onejan = new Date(this.getFullYear(),0,1);
-            var today = new Date(this.getFullYear(),this.getMonth(),this.getDate());
-            var dayOfYear = ((today - onejan + 86400000)/86400000);
-            return Math.ceil(dayOfYear/7)
-          };
-
-        var date_url = ""
-        var now = new Date();
-        var current_period = "Day"
-
-        get_tasks = function (tasks_url) {
-            history.pushState({}, null, tasks_url);
-            $.ajax({
-                type: "GET",
-                url: tasks_url,
-                success : function(tasks) {
-                    //tasks = data; //JSON.stringify(data)
-                    console.log("Прибыли данные: " +  tasks);
-                    console.log(typeof tasks);
-                    if (tasks["tasks"] !== undefined)
-                    {
-                        console.log(tasks["tasks"]);
-                        console.log(typeof tasks["tasks"]);
-                        $("#current_tasklist").empty() 
-                        for (var task in tasks["tasks"])
-                        {
-                            console.log(typeof task);
-                            var task_descr = JSON.parse(tasks["tasks"][task])
-                            console.log(task_descr);
-                            var task_str = task_descr["descriprion"] + ' - ' + task_descr["priority"]
-                            if (task_descr["task_begin"] !== undefined)
-                                task_str += ' - ' + task_descr["task_begin"]
-                            if (task_descr["task_end"] !== undefined)
-                                task_str += ' - ' + task_descr["task_end"]
-                            if (task_descr["lost_time"] !== undefined)
-                                task_str += ' - ' + task_descr["lost_time"]
-                            $("#current_tasklist").append(       
-                                '<li class="list-group-item d-flex align-items-center">' +
-                                    '<div class="media-body">'+ task_str + '</div>' + 
-                                    '<div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">' + 
-                                        '<input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>' +
-                                        '<label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">' + 
-                                        '</label>' + 
-                                    '</div>' + 
-                                '</li>'); 
-                        }
-
-                    }
-                }
-            });
-        };
-
-        //update all dropdowns //todo
-        $(".btn-group a ").click(function () {
-            $(this).parent().find('.btn').text($(this).text());
-        });
-
-
-        get_period = function (period, time) {
-            var url = "/tasklist/"
-            switch(period)
-            {
-                case "Day":
-                    url += "d";
-                    url += (time.getDate() < 10) ? ('0' + String(time.getDate())) : String(time.getDate());
-                    url += (time.getMonth() < 9) ? ('0' + String(time.getMonth() + 1)) : String(time.getMonth() + 1);
-                    url += (String(time.getFullYear())).substring(2,4) + '/';
-                    break;
-                case "Week":
-                    url += "w";
-                    url += (time.getWeek() < 10) ? ('0' + String(time.getWeek())) : String(time.getWeek());
-                    url += (time.getMonth() < 9) ? ('0' + String(time.getMonth() + 1)) : String(time.getMonth() + 1);
-                    url += (String(time.getFullYear())).substring(2,4) + '/';
-                    break;
-                case "Month":
-                    url += "m";
-                    url += (time.getMonth() < 9) ? ('0' + String(time.getMonth() + 1)) : String(time.getMonth() + 1);
-                    url += (String(time.getFullYear())).substring(2,4) + '/';
-                    break;
-                case "Year":
-                    url += "y";
-                    url += (String(time.getFullYear())).substring(2,4) + '/';
-                    break;
-                case "Global":
-                    url += "g";
-                    break;
-                case "Free":
-                    url += "f";
-                    break;
-            }
-
-            console.log(url)
-            return url
-        };
-
-        $("button").click(function () {
-            if ($(this).parent().attr("id") == "current_period")
-            {
-                if ($(this).text() == "Next")
-                {
-                    switch(current_period)
-                    {
-                        case "Day":
-                            now.setDate(now.getDate() + 1);
-                            break;
-                        case "Week":
-                            now.setDate(now.getDate() + 7);
-                            break;
-                        case "Month":
-                            now.setMonth(now.getMonth() + 1);
-                            break;
-                        case "Year":
-                            now.setFullYear(now.getFullYear() + 1);
-                            break;
-                    }
-                }
-                else if ($(this).text() == "Previous")
-                {
-                    switch(current_period)
-                    {
-                        case "Day":
-                            now.setDate(now.getDate() - 1);
-                            break;
-                        case "Week":
-                            now.setDate(now.getDate() - 7);
-                            break;
-                        case "Month":
-                            now.setMonth(now.getMonth() - 1);
-                            break;
-                        case "Year":
-                            now.setFullYear(now.getFullYear() - 1);
-                            break;
-                    }
-                }
-                else 
-                {
-                    current_period = $(this).text();
-                }
-
-                console.log(now);
-                date_url = get_period(current_period, now);
-                get_tasks(date_url);
-                console.log(date_url);
-            }
-
-        });
-    </script>
 
     <!-- Modal trigger -->
     <div class="btn-group float-right my-2 mx-2" role="group" aria-label="Basic example">
@@ -259,12 +109,6 @@
                     </div>
                 </div>
                 
-                <script>
-                    $(function () {
-                        $("#datetimepicker1").datetimepicker();
-                    });
-                </script>
-
                 <!-- Datetime end -->
                 <div class="mr-2 my-2">
                     <label>Datetime end: </label>
@@ -276,12 +120,6 @@
                         <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                     </div>
                 </div>
-
-                <script>
-                    $(function () {
-                        $("#datetimepicker2").datetimepicker();
-                    });
-                </script>
 
                 <!-- Decomposite task -->
                 <div class="mr-2 my-2">
@@ -327,80 +165,7 @@
     </div>
 
     <ul class="list-group pmd-list pmd-card-list pmd-list-avatar " id="current_tasklist">
-        
-        
-        <!-- {% for task in tasks %}
-        <li class="list-group-item d-flex align-items-center">
-            <a href="javascript:void(0);" class="pmd-avatar-list-img"> 
-                <img alt="40x40" data-src="holder.js/40x40" class="img-fluid" src="img/40x40.png" data-holder-rendered="true">
-            </a>
-            <div class="media-body">{{task}}</div>
-            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
-                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>
-                <label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">
-                </label>
-            </div>
-        </li>
-        {% endfor %} -->
-        
-        <!-- <li class="list-group-item d-flex align-items-center">
-            <div class="media-body"> List item with avatar and action </div>
-            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
-                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck1">
-                <label class="custom-control-label" for="defaultCheck1">
-                </label>
-            </div> 
-        </li>
-        
-        <li class="list-group-item d-flex align-items-center">
-            <div class="media-body"> List item with avatar and action </div>
-            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
-                <input class="custom-control-input" type="checkbox" value="unchecked" id="defaultCheck2">
-                <label class="custom-control-label" for="defaultCheck2">
-                </label>
-            </div>
-        </li> -->
+        <!-- Empty list -->
     </ul>
-
-    <script>
-        //update all dropdowns
-        $(".dropdown-menu a ").click(function () {
-            $(this).parents(".dropdown").find('.btn').text($(this).text());
-        });
-
-        //save changes button
-        $("#create_task_modal_save_button").click(function () {
-            date_url = get_period(current_period, now);
-            $.post(date_url,
-            JSON.stringify ({
-                "desr"     :                    $("#exampleFormControlTextarea1").val(),
-                "priority" :                    $("#task_priority_dropdown_button").text(),
-                "traking"  :                    $("#traking_type_dropdown_button").text(),
-                "period"   :                    $("#task_period_dropdown_button").text(),
-                "is_habit" :                    $("#is_habit").is(':checked'),
-                "datetime_start" :              $("#datetimeinput1").val(),
-                "datetime_end" :                $("#datetimeinput2").val(),
-                "parent_task" :                 $("#parent_task_input").val(),
-                "template_intervals" :          {   "active_intervals" :  $("#active_days_input2").val(),
-                                                    "exclude_selected" :  $("#exclude_selected2").is(':checked') },
-                "template_counter" :            $("#repeat_counter_form").val()
-            }),
-            function(data, status) {
-                alert("saved sucess")
-            },
-            'json');
-        });
-
-        jQuery(document).ready(function($) {
-            current_period = "Day"
-            now = new Date();
-            date_url = "/tasklist/d";
-            date_url += (now.getDate() < 10) ? ('0' + String(now.getDate())) : String(now.getDate());
-            date_url += (now.getMonth() < 9) ? ('0' + String(now.getMonth() + 1)) : String(now.getMonth() + 1);
-            date_url += (String(now.getFullYear())).substring(2,4) + '/';
-            console.log(date_url)
-            get_tasks(date_url);
-        });
-    </script>
 
 {% endblock %}

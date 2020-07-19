@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import re
 
 def add_task(json_data):
-    if not {'desr', 'priority', 'period', 'is_habit', 'traking'}.issubset(set(json_data)):
+    if not {'desr', 'priority', 'period', 'is_habit', 'traking', 'datetime_start'}.issubset(set(json_data)):
         print('attribute error')
         return
 
@@ -34,6 +34,7 @@ def add_task(json_data):
             else: 
                 print('attribute error')
                 return
+        # traking
         elif key == 'traking':
             for sh, lg in TRAKING_TYPES:
                 if val == lg:
@@ -57,7 +58,7 @@ def add_task(json_data):
             # new_task.decomposite_task = tmp_dt
         # template
         elif key == 'template_intervals':   
-            if not {'active_intervals', 'exclude_selected'}.issubset(set(val)):
+            if not {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(val)):
                 print('attribute error')
                 return
 
@@ -66,20 +67,23 @@ def add_task(json_data):
             active_intervals = val['active_intervals'].split(',')
             for r in ranges:
                 active_intervals.remove(r)
-            active_intervals = list(map(int, active_intervals))
+            if len(active_intervals) > 0 and active_intervals[0] != '':
+                active_intervals = list(map(int, active_intervals))
             ranges = [range(int(r.split('-')[0]), int(r.split('-')[1])+1) for r in ranges]
             for r in ranges:
                 active_intervals.extend(r)
-            int_active_intervals = 0
-            for i in range(0,{ 'D' : 7, 'W' : 4, 'M' : 12, 'Y' : 10, 'C' : 0, 'G': 0, 'F' : 0 }[new_task.period]):
-                if i in active_intervals:
-                    int_active_intervals |= 1 << (i - 1)
-            #exclude_selected
+
             if val['exclude_selected'] == 'True':
-                int_active_intervals = ~int_active_intervals
-            new_task.template_intervals = int_active_intervals
-        elif key == 'template_counter':
-            new_task.template_counter = int(val)
+                active_intervals = [i for i in range(0,{ 'D' : 7, 'W' : 4, 'M' : 12, 'Y' : 10, 'C' : 0, 'G': 0, 'F' : 0 }[new_task.period]) if i not in active_intervals]
+
+            # add all templates for current task
+            if val['template_counter'] != '':
+                for interval in range(0, int(val['template_counter'])):
+                    dt = new_task.task_begin
+                    dt.month = dt.month + interval
+                    for point in active_intervals:
+                        dt.day = dt.day + point
+                        Task.objects.create(period=new_task.period, descriprion=new_task.descriprion, priority=new_task.priority, is_habit=new_task.is_habit, traking_type=new_task.traking_type, task_begin=dt)                   
     
     val = 4
     Task.save(new_task)
@@ -166,20 +170,13 @@ def get_tasks(list_type):
         day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
         year = '20' + year
         now = datetime(int(year), int(month), int(day), 0, 0, 0, 0)
-        tasks = Task.objects.filter(period='D') 
-        # add tasks for specific period
-        # task_begin__year=now.year, task_begin__month=now.month, 
-        tasks2 = [repr(task) for task in tasks.filter(task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)]
-        tasks.exclude(task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)
+        tasks = Task.objects.filter(period='D', task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)
+        tasks2 = [repr(task) for task in tasks]
         # add template tasks
         for task in tasks:
-            if now.day >= task.task_begin.day and ((task.template_counter == 0 or now.day <= (task.task_begin.day + task.template_counter))): # limited counter
-                if task.template_intervals & int('80000000', 16):
-                    if task.template_intervals & (1 << (now.day - 1)): # date template
-                        tasks2.append(repr(task)) 
-                else:
-                    if task.template_intervals & (1 << (now.weekday - 1)): # weekday template
-                        tasks2.append(repr(task)) 
+            tasks2.extend([repr(task) for task in Task.objects.filter(period='D', template=task.id)])
+
+            
     elif list_type[0] == 'w':
         week, month, year = list_type[1], list_type[2:4], list_type[4:6]
         year = '20' + year
@@ -232,8 +229,7 @@ def task_list(request, list_type):
         print(3, tasks)
         return HttpResponse(tasks, content_type="application/json")
     else:
-        return HttpResponse(status=204)
-
+        return render(request, 'tasktracker/base_tasklist.html')
 
 def calendar_view(request):
     print('calendar work')

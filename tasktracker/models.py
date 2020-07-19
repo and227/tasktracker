@@ -19,10 +19,9 @@ class Task(models.Model):
     task_end = models.DateTimeField(default=datetime.datetime.now())
     lost_time = models.IntegerField(default=0)
     timer_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
-    decomposite_task = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True)
+    decomposite_task = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True, related_name='decomposite')
     period = models.CharField(max_length=1, choices=PERIOD_TYPES, default='F')
-    template_intervals = models.IntegerField(default=0)
-    template_counter = models.IntegerField(default=0)
+    template_task = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True, related_name='template')
     task_statistic = models.IntegerField(default=0)
     task_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
 
