@@ -24,16 +24,31 @@ class Task(models.Model):
     template_task = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True, related_name='template')
     task_statistic = models.IntegerField(default=0)
     task_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
-
+    # for task edit
+    active_intervals = models.CharField(max_length=32, db_index=True, default='')
+    exclude_selected = models.BooleanField(default=False)
+    template_counter = models.IntegerField(default=0)
 
     def __repr__(self):
+        template = {   
+            'active_intervals' :            str(self.active_intervals),
+            'exclude_selected' :            str(self.exclude_selected),
+            'template_counter' :            str(self.template_counter)
+        }
+
         ret = {
-           'descriprion' :  self.descriprion,
-           'priority' : self.get_priority_display(),
-           'task_begin' : self.task_begin.strftime("%Y.%m.%d %H:%M:%S")
+            'desr' :                        self.descriprion,
+            'priority' :                    self.get_priority_display(),
+            'datetime_start' :              self.task_begin.strftime("%m/%d/%Y %I:%M %p"),          
+            'traking'  :                    self.get_traking_type_display(),
+            'period'   :                    self.get_period_display(),
+            'is_habit' :                    str(self.is_habit),
+            'datetime_end' :                self.task_end.strftime("%m/%d/%Y %I:%M %p"),
+            'parent_task' :                 self.decomposite_task,
+            'template_intervals' :          template
         }
         if self.traking_type == 'F':
-            ret['task_end'] = self.task_end.strftime("%Y.%m.%d %H:%M:%S")
+            ret['datetime_end'] = self.task_end.strftime("%m/%d/%Y %I:%M %p")
         elif self.traking_type == 'P':
             ret['lost_time'] = str(self.lost_time)
         return json.dumps(ret)

@@ -5,10 +5,56 @@ Date.prototype.getWeek = function() {
     return Math.ceil(dayOfYear/7)
   };
 
+Storage.prototype.setObject = function(key, value) {
+    this.setItem(key, JSON.stringify(value));
+}
+
+Storage.prototype.getObject = function(key) {
+    return JSON.parse(this.getItem(key));
+}
+
 var tasklist_settings = {
     type : "Day",
     time : new Date()
 }
+
+var old_data = null
+
+fill_tasks = function (tasks, tasks_url) {
+    history.pushState({}, null, tasks_url);
+    if (tasks["tasks"] !== undefined)
+    {
+        console.log(tasks["tasks"]);
+        console.log(typeof tasks["tasks"]);
+        $("#current_tasklist").empty();
+        sessionStorage.clear();
+        for (var task in tasks["tasks"])
+        {
+            console.log(typeof task);
+            var task_descr = JSON.parse(tasks["tasks"][task])
+            console.log(task_descr);
+            // build string for indication
+            var task_str = task_descr["desr"] + ' - ' + task_descr["priority"]
+            if (task_descr["datetime_start"] !== undefined)
+                task_str += ' - ' + task_descr["datetime_start"]
+            if (task_descr["datetime_end"] !== undefined)
+                task_str += ' - ' + task_descr["datetime_end"]
+            if (task_descr["lost_time"] !== undefined)
+                task_str += ' - ' + task_descr["lost_time"]
+            $("#current_tasklist").append(       
+                '<li class="list-group-item d-flex align-items-center">' +
+                    '<div class="media-body">'+ task_str + '</div>' + 
+                    '<div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">' + 
+                        '<input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>' +
+                        '<label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">' + 
+                        '</label>' + 
+                    '</div>' + 
+                '</li>'); 
+            // save task in local storage for update need
+            sessionStorage.setItem(task_descr["desr"], JSON.stringify(task_descr))
+        }
+    }
+};
 
 get_tasks = function (tasks_url) {
     history.pushState({}, null, tasks_url);
@@ -16,37 +62,7 @@ get_tasks = function (tasks_url) {
         type: "GET",
         url: tasks_url,
         success : function(tasks) {
-            //tasks = data; //JSON.stringify(data)
-            console.log("Прибыли данные: " +  tasks);
-            console.log(typeof tasks);
-            if (tasks["tasks"] !== undefined)
-            {
-                console.log(tasks["tasks"]);
-                console.log(typeof tasks["tasks"]);
-                $("#current_tasklist").empty() 
-                for (var task in tasks["tasks"])
-                {
-                    console.log(typeof task);
-                    var task_descr = JSON.parse(tasks["tasks"][task])
-                    console.log(task_descr);
-                    var task_str = task_descr["descriprion"] + ' - ' + task_descr["priority"]
-                    if (task_descr["task_begin"] !== undefined)
-                        task_str += ' - ' + task_descr["task_begin"]
-                    if (task_descr["task_end"] !== undefined)
-                        task_str += ' - ' + task_descr["task_end"]
-                    if (task_descr["lost_time"] !== undefined)
-                        task_str += ' - ' + task_descr["lost_time"]
-                    $("#current_tasklist").append(       
-                        '<li class="list-group-item d-flex align-items-center">' +
-                            '<div class="media-body">'+ task_str + '</div>' + 
-                            '<div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">' + 
-                                '<input class="custom-control-input" type="checkbox" value="" id="defaultCheck{{forloop.counter0}}" unchecked>' +
-                                '<label class="custom-control-label" for="defaultCheck{{forloop.counter0}}">' + 
-                                '</label>' + 
-                            '</div>' + 
-                        '</li>'); 
-                }
-            }
+            fill_tasks(tasks, tasks_url)
         }
     });
 };
@@ -163,11 +179,7 @@ $(function () {
     $("#datetimepicker1").datetimepicker();
 });
 
-
-//save changes button
-//$("#create_task_modal_save_button").click(function () {
-$(document).on('click', '#create_task_modal_save_button', function () {
-    let date_url = get_period(tasklist_settings.type, tasklist_settings.time);
+getTaskData = function () {
     let start = $("#datetimeinput1").val();
     if ((start === "") || (start === undefined))
     {
@@ -193,8 +205,13 @@ $(document).on('click', '#create_task_modal_save_button', function () {
         }
     }
       
-    $.post(date_url,
-    JSON.stringify ({
+    let template = {   
+        "active_intervals" :            $("#active_days_input2").val(),
+        "exclude_selected" :            $("#exclude_selected2").is(':checked'),
+        "template_counter" :            $("#repeat_counter_form").val()
+    };
+
+    let data = {
         "desr"     :                    $("#exampleFormControlTextarea1").val(),
         "priority" :                    $("#task_priority_dropdown_button").text(),
         "traking"  :                    $("#traking_type_dropdown_button").text(),
@@ -203,14 +220,48 @@ $(document).on('click', '#create_task_modal_save_button', function () {
         "datetime_start" :              start,
         "datetime_end" :                $("#datetimeinput2").val(),
         "parent_task" :                 $("#parent_task_input").val(),
-        "template_intervals" :          {   "active_intervals" :  $("#active_days_input2").val(),
-                                            "exclude_selected" :  $("#exclude_selected2").is(':checked'),
-                                            "template_counter" :  $("#repeat_counter_form").val() }
-    }),
-    function(data, status) {
-        update_tasks(tasklist_settings, tasklist_settings.type)
-    },
-    'json');
+        "template_intervals" :          template
+    };
+
+    return data;
+};
+
+$(document).on('click', '#edit_task_button', function () {
+    $("#create_task_modal").modal('show');
+    $("#create_task_modal_save_button").text("Create task")
+});
+
+//save changes button
+//$("#create_task_modal_save_button").click(function () {
+$(document).on('click', '#create_task_modal_save_button', function () {
+    let tasks_url = get_period(tasklist_settings.type, tasklist_settings.time);
+    let data = getTaskData();
+
+    if ($("#create_task_modal_save_button").text() == "Update task")
+    {
+        data = JSON.stringify ({
+            "type"     :                    "edit",
+            "old_data" :                    old_data,
+            "data"     :                    data 
+        });
+    }
+    else  
+    {
+        data = JSON.stringify ({
+            "type"     :                    "add",
+            "data"     :                    data 
+        });
+    }
+
+    $.ajax({
+        type: "POST",
+        url: tasks_url,
+        data: data,
+        success : function(tasks) {
+            fill_tasks(tasks, tasks_url)
+        },
+        dataType: "json"
+    });  
 });
 
 $(document).ready(function() {
@@ -219,12 +270,63 @@ $(document).ready(function() {
     update_tasks(tasklist_settings, "Day")
 });
 
+parse_task_string = function(str) {
+    tokens = str.split(' - ');
+    let data = {
+        "desr" : tokens[0],
+        "datetime_start" : tokens[2]
+    };
+
+    return data;
+};
+
+fillModalWindow = function (entry) {
+    $("#exampleFormControlTextarea1").val(entry["desr"]);
+    $("#task_priority_dropdown_button").text(entry["priority"]);
+    $("#traking_type_dropdown_button").text(entry["traking"]);
+    $("#task_period_dropdown_button").text(entry["period"]);
+    let state = (entry["is_habit"] === 'true') ? true : false;
+    $("#is_habit").attr('checked', state);
+    $("#datetimeinput1").val(entry["datetime_start"]);
+    $("#datetimeinput2").val(entry["datetime_end"]);
+    $("#parent_task_input").val(entry["parent_task"]);
+    $("#active_days_input2").val(entry["active_intervals"]);
+    state = (entry["exclude_selected"] === 'True') ? true : false;
+    $("#exclude_selected2").attr('checked', state);
+    $("#repeat_counter_form").val(entry["template_counter"]);
+};
+
 $(function() {
-    $.contextMenu({
-        selector: '#current_tasklist', 
+    $("#current_tasklist").contextMenu({
+        selector: '.list-group-item', 
         callback: function(key, options) {
-            var m = "clicked: " + key;
-            window.console && console.log(m) || alert(m); 
+            console.log('clicked', key, $(this).text());
+            if (key == "delete")
+            {
+                let tasks_url = get_period(tasklist_settings.type, tasklist_settings.time);
+                let data = parse_task_string($(this).text());
+                $.ajax({
+                    type: "POST",
+                    url: tasks_url,
+                    data: JSON.stringify ({
+                        "type"     :                    "delete",
+                        "data"     :                    data 
+                    }),
+                    success : function(tasks) {
+                        fill_tasks(tasks, tasks_url)
+                    },
+                    dataType: "json"
+                });
+            }
+            else if (key == "edit")
+            {
+                old_data = parse_task_string($(this).text());
+                let entry = sessionStorage.getItem(old_data["desr"]);
+                entry = JSON.parse(entry);
+                $("#create_task_modal").modal('show');
+                $("#create_task_modal_save_button").text("Update task")
+                fillModalWindow(entry);              
+            }
         },
         items: {
             "edit": {name: "Edit", icon: "edit"},
@@ -232,19 +334,21 @@ $(function() {
         }
     });
 
-    $('.context-menu-one').on('click', function(e){
-        console.log('clicked', this);
+    //$('.list-group-item').on('click', function(e){
+    $(document).on('click', '.list-group-item', function () {
+        console.log('clicked', this, this.innerText);
     })    
 });
 
-// $("#current_tasklist").on( "click", function( clickE ) {
-// $(document).on('click', '#current_tasklist', function (clickE) {
+//$("#current_tasklist").on( "click", function( clickE ) {
+// $(document).on('click', '.list-group-item', function (clickE) {
 //     alert(clickE.offsetX + ' ' + clickE.offsetY);
-//     $.contextMenu( { x: clickE.offsetX, y: clickE.offsetY } );
+//     console.log('clicked', this);
+//     $(this).contextMenu( { x: clickE.offsetX, y: clickE.offsetY } );
 // });
 
 // $.contextMenu({
-//     selector: '#current_tasklist', 
+//     //selector: '.list-group-item', 
 //     callback: function(key, options) {
 //         var m = "clicked: " + key;
 //         window.console && console.log(m) || alert(m); 
