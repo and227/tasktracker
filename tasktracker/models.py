@@ -44,6 +44,7 @@ class Task(models.Model):
             'period'   :                    self.get_period_display(),
             'is_habit' :                    str(self.is_habit),
             'datetime_end' :                self.task_end.strftime("%m/%d/%Y %I:%M %p"),
+            'lost_time' :                   str(self.lost_time),
             'parent_task' :                 self.decomposite_task,
             'template_intervals' :          template
         }

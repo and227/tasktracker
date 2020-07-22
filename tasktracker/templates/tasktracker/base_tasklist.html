@@ -164,6 +164,20 @@
         </div>
     </div>
 
+    <template id="list_elem_templ">
+        <li class="list-group-item d-flex align-items-center">
+            <button type="button" class="btn btn-success">Run</button>
+            <div class="media-body">
+                <!-- Description -->
+            </div>  
+            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck" unchecked>
+                <label class="custom-control-label" for="defaultCheck"></label>
+            </div> 
+        </li>
+    </template>
+
+
     <ul class="list-group pmd-list pmd-card-list pmd-list-avatar " id="current_tasklist">
         <!-- Empty list -->
     </ul>

@@ -1,0 +1,35 @@
+#current_tasklist .descr {
+    float: left;
+    text-align: center;
+    margin: 0 2.5%;
+}
+
+.prior_low {
+    color: rgb(196, 235, 21); 
+}
+
+.prior_high {
+    color: rgb(216, 14, 14);
+}
+
+#current_tasklist .start_time {
+    float: left;
+    text-align: center;
+    margin-left: 0 2.5%;
+}
+
+#current_tasklist .end_time {
+    float: left;
+    text-align: center;
+    margin: 0 2.5%;
+}
+
+#current_tasklist .lost_time {
+    float: right;
+    text-align: center;
+    color: rgb(216, 14, 14);
+}
+
+.op_text  {
+    opacity: 0.3;
+}
