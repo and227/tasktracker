@@ -48,7 +48,9 @@ def fill_task_params(json_data, new_task):
             tmp_dt = datetime.strptime(val, "%m/%d/%Y %I:%M %p")
             new_task.task_end = tmp_dt
         elif key == 'parent_task':
-            pass
+            if val != '':
+                parent_task = Task.objects.get(descriprion=val)
+                new_task.decomposite_task = parent_task
             # tmp_dt = Task.objects.get(descriprion=val).id
             # new_task.decomposite_task = tmp_dt
         # template
@@ -242,16 +244,71 @@ def default_tasks():
         tasks = Task.objects.all()
     print(1, tasks)
 
+def check_task(list_type, json_data):
+    if list_type[0] == 'd':
+        day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
+        year = '20' + year
+        now = datetime(int(year), int(month), int(day), 0, 0, 0, 0) 
+        tasks = Task.objects.filter(descriprion=json_data['desr'], period='D', task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)  
+        if len(tasks) > 0:
+            return True
+        else:
+            return False
+
+def task_to_dict(task, exclude, level):
+    if level > 2:
+        return
+
+    template = {   
+        'active_intervals' :            str(task.active_intervals),
+        'exclude_selected' :            str(task.exclude_selected),
+        'template_counter' :            str(task.template_counter)
+    }
+
+    ret = {
+        'desr' :                        task.descriprion,
+        'priority' :                    task.get_priority_display(),
+        'datetime_start' :              task.task_begin.strftime("%m/%d/%Y %I:%M %p"),          
+        'traking'  :                    task.get_traking_type_display(),
+        'period'   :                    task.get_period_display(),
+        'is_habit' :                    str(task.is_habit),
+        'datetime_end' :                task.task_end.strftime("%m/%d/%Y %I:%M %p"),
+        'lost_time' :                   str(task.lost_time),
+        'template_intervals' :          template
+    }
+    if task.traking_type == 'F':
+        ret['datetime_end'] = task.task_end.strftime("%m/%d/%Y %I:%M %p")
+    elif task.traking_type == 'P':
+        ret['lost_time'] = str(task.lost_time)
+
+    subtasks = Task.objects.filter(decomposite_task=task)
+    if len(subtasks) > 0:
+        ret['parent_task'] = []
+        for subtask in subtasks:
+            st = task_to_dict(subtask, exclude, level+1)
+            ret['parent_task'].append(st)
+            exclude.append(st)        
+
+    return ret
+
 def get_tasks(list_type):
     if list_type[0] == 'd':
         day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
         year = '20' + year
         now = datetime(int(year), int(month), int(day), 0, 0, 0, 0)
         tasks = Task.objects.filter(period='D', task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)
-        tasks2 = [repr(task) for task in tasks]
+        tasks2 = []
+        exclude_list = []
+        # add simple and decomposite tasks
+        for task in tasks:
+            task_dict = task_to_dict(task, exclude_list, 0)
+            tasks2.append(task_dict)
+
+        tasks2 = [json.dumps(task_dict) for task_dict in tasks2 if task_dict not in exclude_list]
         # add template tasks
         for task in tasks:
-            tasks2.extend([repr(task) for task in Task.objects.filter(period='D', template=task.id)])
+            tasks2.extend([json.dumps(task_to_dict(t_task)) for t_task in Task.objects.filter(period='D', template=task)])
+
 
             
     elif list_type[0] == 'w':
@@ -300,7 +357,8 @@ def task_list(request, list_type):
         if request.method == 'POST':
             json_data = json.loads(request.body)
             if json_data["type"] == "add":
-                add_task(json_data["data"])
+                if not check_task(list_type, json_data["data"]):
+                    add_task(json_data["data"])
             elif json_data["type"] == "delete":
                 delete_task(json_data["data"])
             elif json_data["type"] == "edit":

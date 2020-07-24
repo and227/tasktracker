@@ -19,9 +19,9 @@ class Task(models.Model):
     task_end = models.DateTimeField(default=datetime.datetime.now())
     lost_time = models.IntegerField(default=0)
     timer_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
-    decomposite_task = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True, related_name='decomposite')
+    decomposite_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='decomposite')
     period = models.CharField(max_length=1, choices=PERIOD_TYPES, default='F')
-    template_task = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True, related_name='template')
+    template_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='template')
     task_statistic = models.IntegerField(default=0)
     task_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
     # for task edit
@@ -45,7 +45,7 @@ class Task(models.Model):
             'is_habit' :                    str(self.is_habit),
             'datetime_end' :                self.task_end.strftime("%m/%d/%Y %I:%M %p"),
             'lost_time' :                   str(self.lost_time),
-            'parent_task' :                 self.decomposite_task,
+            'parent_task' :                 self.decomposite_task.id if self.decomposite_task != None else None,
             'template_intervals' :          template
         }
         if self.traking_type == 'F':

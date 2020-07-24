@@ -33,3 +33,23 @@
 .op_text  {
     opacity: 0.3;
 }
+
+.subtask1 {
+    margin: 0 2.5%;
+}
+
+.contain {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
+.break {
+    width: 100%;
+    height: 0%;
+    padding-bottom: 1%;
+}
+
+.sublist {
+    margin-top: 0 5%;
+}

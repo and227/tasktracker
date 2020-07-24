@@ -20,6 +20,66 @@ var tasklist_settings = {
 
 var old_data = null
 var active_task = null;
+var active_context = null;
+
+add_template_element = function(list_to_append, task_descr, index) {
+    
+    let prior_class = "";
+    switch(task_descr["priority"])
+    {
+        case "Low":
+            prior_class = "prior_low";
+            break;
+        case "High":
+            prior_class = "prior_high";
+            break;  
+        default:
+            break;                  
+    }
+
+    // Get template
+    var template1 = $("#list_elem_templ").html();
+    // Create a new row from the template
+    var list_elem_templ = $(template1);
+    // button
+    var btn = list_elem_templ.find(".btn");
+    if ((task_descr["traking"] !== "Fixed") && (task_descr["traking"] !== "Period"))
+    {
+        btn.addClass("op_text"); 
+        btn.css("pointer-events","none");
+    }
+    // description
+    var media_body = list_elem_templ.find(".media-body");
+    media_body.append($("<span/>").addClass("descr" + ' ' + prior_class).text(task_descr["desr"]));
+    // tracking
+    if (task_descr["traking"] === "Fixed")
+    {
+        media_body.append($("<span/>").addClass("start_time").text(task_descr["datetime_start"]));
+        media_body.append($("<span/>").addClass("end_time").text(task_descr["datetime_end"]));
+    }
+    else if (task_descr["traking"] === "Period")
+    {
+        media_body.append($("<span/>").addClass("lost_time").text(task_descr["lost_time"]));
+    }
+    // checkbox
+    list_elem_templ.find(".custom-control-input").attr("id", "defaultCheck" + index);
+    list_elem_templ.find(".custom-control-label").attr("for", "defaultCheck" + index);
+
+    if (task_descr['parent_task'] !== undefined && task_descr['parent_task'].length > 0)
+    {
+        in_list = list_elem_templ.children(".list-group"); //.children(".contain")
+        $("<div/>").addClass("break").insertBefore(in_list);
+        for (var [i, t] of task_descr['parent_task'].entries())
+        {
+            add_template_element(in_list, t, index + 'L' + String(i));
+        }
+    }
+
+    // save task in local storage for update need
+    sessionStorage.setItem(task_descr["desr"], JSON.stringify(task_descr))
+
+    list_to_append.append(list_elem_templ);
+};
 
 fill_tasks = function (tasks, tasks_url) {
     history.pushState({}, null, tasks_url);
@@ -32,78 +92,10 @@ fill_tasks = function (tasks, tasks_url) {
         for (var [index, task] of tasks["tasks"].entries())
         {
             console.log(typeof task);
-            var task_descr = JSON.parse(task)
-            console.log(task_descr);
+            var task_obj = JSON.parse(task)
+            console.log(task_obj);
 
-            let prior_class = "";
-            switch(task_descr["priority"])
-            {
-                case "Low":
-                    prior_class = "prior_low";
-                    break;
-                case "High":
-                    prior_class = "prior_high";
-                    break;  
-                default:
-                    break;                  
-            }
-
-            // Get template
-            var template1 = $("#list_elem_templ").html();
-            // Create a new row from the template
-            var list_elem_templ = $(template1);
-            // button
-            var btn = list_elem_templ.find(".btn");
-            if ((task_descr["traking"] !== "Fixed") && (task_descr["traking"] !== "Period"))
-            {
-                btn.addClass("op_text"); 
-                btn.css("pointer-events","none");
-            }
-            // description
-            var media_body = list_elem_templ.find(".media-body");
-            media_body.append($("<span/>").addClass("descr" + prior_class).text(task_descr["desr"]));
-            // tracking
-            if (task_descr["traking"] === "Fixed")
-            {
-                media_body.append($("<span/>").addClass("start_time").text(task_descr["datetime_start"]));
-                media_body.append($("<span/>").addClass("end_time").text(task_descr["datetime_end"]));
-            }
-            else if (task_descr["traking"] === "Period")
-            {
-                media_body.append($("<span/>").addClass("lost_time").text(task_descr["lost_time"]));
-            }
-            // checkbox
-            list_elem_templ.find(".custom-control-input").attr("id", "defaultCheck" + String(index));
-            list_elem_templ.find(".custom-control-label").attr("for", "defaultCheck" + String(index));
-
-            $("#current_tasklist").append(list_elem_templ);
-
-
-            // task_str    = '<span class="descr ' + prior_class +'">' + task_descr["desr"] + '</span>';
-            // if (task_descr["traking"] === "Fixed")
-            // {
-            //     task_str += '<span class="start_time">' + task_descr["datetime_start"] + '</span>'; 
-            //     task_str += '<span class="end_time">' + task_descr["datetime_end"] + '</span>'; 
-            // }
-            // else if (task_descr["traking"] === "Period")
-            // {
-            //     task_str += '<span class="lost_time">' + task_descr["lost_time"] + '</span>';
-            // }
-
-            // $("#current_tasklist").append(       
-            //     '<li class="list-group-item d-flex align-items-center">' +
-            //         '<button type="button" class="btn btn-success">Run</button>' + 
-            //         '<div class="media-body">'+ task_str + 
-            //         '</div>' + 
-            //         '<div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">' + 
-            //             '<input class="custom-control-input" type="checkbox" value="" id="defaultCheck' + index + '" unchecked>' +
-            //             '<label class="custom-control-label" for="defaultCheck' + index + '">' + 
-            //             '</label>' + 
-            //         '</div>' + 
-            //     '</li>'); 
-
-            // save task in local storage for update need
-            sessionStorage.setItem(task_descr["desr"], task)
+            add_template_element($("#current_tasklist"), task_obj, String(index));
         }
     }
 };
@@ -189,22 +181,29 @@ $(document).on('click', '.list-group-item button', function () {
             $(this).removeClass("btn-success");
             $(this).addClass("btn-danger");
             $(this).text("Stop");
-               
+            
+            if (active_context !== null)
+            {
+                $(active_context).removeClass("btn-danger");
+                $(active_context).addClass("btn-success");
+                $(active_context).text("Run");                
+            }
+
             active_context = this;
             active_task = setInterval(function () {
                 update_timer(active_context);
             }, 1000); 
-            
-            $("#current_tasklist").find(".btn").each(function ()
-            {
-                console.log(this);
-                if (this !== active_context)
-                {
-                    $(this).removeClass("btn-danger");
-                    $(this).addClass("btn-success");
-                    $(this).text("Run"); 
-                }
-            });
+                       
+            // $("#current_tasklist").find(".btn").each(function ()
+            // {
+            //     console.log(this);
+            //     if (this !== active_context)
+            //     {
+            //         $(this).removeClass("btn-danger");
+            //         $(this).addClass("btn-success");
+            //         $(this).text("Run"); 
+            //     }
+            // });
         }
         else 
         {
@@ -213,7 +212,9 @@ $(document).on('click', '.list-group-item button', function () {
             $(this).addClass("btn-success");
             $(this).text("Run"); 
             //$(this).parent().find(".end_time .lost_time").remove();    
-            clearInterval(active_task);   
+            clearInterval(active_task);  
+            active_task = null;
+            active_context = null; 
         }
     }
 });
@@ -223,12 +224,25 @@ $(document).on('change', '.list-group-item input', function () {
     {
         $(this).parent().parent().find(".media-body").addClass("op_text"); 
         $(this).parent().parent().find(".btn").addClass("op_text"); 
-        clearInterval(active_task);         
+        if($(this).parent().parent().find(".btn").text() === "Stop")
+        {
+            clearInterval(active_task); 
+        }        
     }
     else 
     {
         $(this).parent().parent().find(".media-body").removeClass("op_text");
-        $(this).parent().parent().find(".btn").removeClass("op_text"); 
+        if($(this).parent().parent().find(".media-body .start_time").text() !== "")
+        {
+            $(this).parent().parent().find(".btn").removeClass("op_text"); 
+        }
+        if ($(this).parent().parent().find(".btn"))
+        if($(this).parent().parent().find(".btn").text() === "Stop" && active_task !== null)
+        {         
+            active_task = setInterval(function () {
+                update_timer(active_context);
+            }, 1000);            
+        }
     }
 });
 
@@ -393,8 +407,9 @@ getTaskData = function () {
 };
 
 $(document).on('click', '#edit_task_button', function () {
+    clearModalWindow();
     $("#create_task_modal").modal('show');
-    $("#create_task_modal_save_button").text("Create task")
+    $("#create_task_modal_save_button").text("Create task");
 });
 
 //save changes button
@@ -440,10 +455,10 @@ $(document).ready(function() {
     update_tasks(tasklist_settings, "Day")
 });
 
-parse_task_string = function(str) {
-    tokens = str.split(' - ');
+get_description = function(context) {
+    
     let data = {
-        "desr" : tokens[0],
+        "desr" : $(context).find(".descr").text(),
         "datetime_start" : tokens[2]
     };
 
@@ -466,6 +481,20 @@ fillModalWindow = function (entry) {
     $("#repeat_counter_form").val(entry["template_counter"]);
 };
 
+function clearModalWindow() {
+    $("#exampleFormControlTextarea1").val("");
+    $("#task_priority_dropdown_button").text("Medium");
+    $("#traking_type_dropdown_button").text("Untracked");
+    $("#task_period_dropdown_button").text("Day");
+    $("#is_habit").attr('checked', false);
+    $("#datetimeinput1").val("");
+    $("#datetimeinput2").val("");
+    $("#parent_task_input").val("");
+    $("#active_days_input2").val("");
+    $("#exclude_selected2").attr('checked', false);
+    $("#repeat_counter_form").val("");
+};
+
 $(function() {
     $("#current_tasklist").contextMenu({
         selector: '.list-group-item', 
@@ -474,7 +503,12 @@ $(function() {
             if (key == "delete")
             {
                 let tasks_url = get_period(tasklist_settings.type, tasklist_settings.time);
-                let data = parse_task_string($(this).text());
+                let descr = $(this).find(".descr").text();
+                let task = JSON.parse(sessionStorage.getItem(descr));
+                let data = {
+                    "desr" : descr,
+                    "datetime_start" : task['datetime_start']
+                };
                 $.ajax({
                     type: "POST",
                     url: tasks_url,
@@ -490,17 +524,29 @@ $(function() {
             }
             else if (key == "edit")
             {
-                old_data = parse_task_string($(this).text());
-                let entry = sessionStorage.getItem(old_data["desr"]);
-                entry = JSON.parse(entry);
+                let descr = $(this).find(".descr").text();
+                let task = JSON.parse(sessionStorage.getItem(descr));
+                old_data = {
+                    "desr" : descr,
+                    "datetime_start" : task['datetime_start']
+                };
                 $("#create_task_modal").modal('show');
                 $("#create_task_modal_save_button").text("Update task")
-                fillModalWindow(entry);              
+                fillModalWindow(task);              
+            }
+            else if (key = "add_subtask")
+            {
+                let descr = $(this).find(".descr").text();
+                clearModalWindow();
+                $("#parent_task_input").val(descr);
+                $("#create_task_modal").modal('show');
+                $("#create_task_modal_save_button").text("Create task");
             }
         },
         items: {
             "edit": {name: "Edit", icon: "edit"},
             "delete": {name: "Delete", icon: "delete"},
+            'add_subtask': {name: "Add subtask", icon: "add"},
         }
     });
 
