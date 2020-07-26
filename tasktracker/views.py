@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render
-from .models import Task, PRIORYITY_TYPES, PERIOD_TYPES, TRAKING_TYPES
+from .models import Task, Template, Statistic, PRIORYITY_TYPES, PERIOD_TYPES, TRAKING_TYPES, TASK_TYPES
 import json
 from datetime import datetime, timezone
 import re
@@ -38,9 +38,15 @@ def fill_task_params(json_data, new_task):
             else: 
                 print('attribute error')
                 return
-        # is_habit   
-        elif key == 'is_habit':
-            new_task.is_habit = True if val == 'True' else False
+        # task_type   
+        elif key == 'task_type':
+            for sh, lg in TASK_TYPES:
+                if val == lg:
+                    new_task.task_type = sh
+                    break
+            else: 
+                print('attribute error')
+                return           
         elif key == 'datetime_start' and val != '':
             tmp_dt = datetime.strptime(val, "%m/%d/%Y %I:%M %p")
             new_task.task_begin = tmp_dt
@@ -51,76 +57,84 @@ def fill_task_params(json_data, new_task):
             if val != '':
                 parent_task = Task.objects.get(descriprion=val)
                 new_task.decomposite_task = parent_task
+            else:
+                new_task.decomposite_task = None
             # tmp_dt = Task.objects.get(descriprion=val).id
             # new_task.decomposite_task = tmp_dt
-        # template
-        elif key == 'template_intervals':   
-            if not {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(val)):
-                print('attribute error')
-                return
 
-            # active_intervals
-            new_task.active_intervals = val['active_intervals']
-            ranges = re.findall(r'[0-9]{1,2}-[0-9]{1,2}', new_task.active_intervals)
-            active_intervals = new_task.active_intervals.split(',')
-            for r in ranges:
-                active_intervals.remove(r)
-            if len(active_intervals) > 0 and active_intervals[0] != '':
-                active_intervals = list(map(int, active_intervals))
-            ranges = [range(int(r.split('-')[0]), int(r.split('-')[1])+1) for r in ranges]
-            for r in ranges:
-                active_intervals.extend(r)
+def fill_template_params(json_data, new_template):
+    # template_statistic
+    new_template.template_statistic = 0
+    # active_intervals
+    new_template.active_intervals = json_data['active_intervals']
+    ranges = re.findall(r'[0-9]{1,2}-[0-9]{1,2}', new_template.active_intervals)
+    active_intervals = new_template.active_intervals.split(',')
+    for r in ranges:
+        active_intervals.remove(r)
+    if len(active_intervals) > 0 and active_intervals[0] != '':
+        active_intervals = list(map(int, active_intervals))
+    ranges = [range(int(r.split('-')[0]), int(r.split('-')[1])+1) for r in ranges]
+    for r in ranges:
+        active_intervals.extend(r)
+    # exclude_selected
+    new_template.exclude_selected = True if json_data['exclude_selected'] == 'True' else False
+    if new_template.exclude_selected == True:
+        active_intervals = [i for i in range(0,{ 'D' : 7, 'W' : 4, 'M' : 12, 'Y' : 10, 'C' : 0, 'G': 0, 'F' : 0 }[new_task.period]) if i not in active_intervals]
+    # template_counter
+    new_template.template_counter = 0
+    if json_data['template_counter'] != '':
+        new_template.template_counter = int(json_data['template_counter'])   
 
-            new_task.exclude_selected = True if val['exclude_selected'] == 'True' else False
-            if new_task.exclude_selected == 'True':
-                active_intervals = [i for i in range(0,{ 'D' : 7, 'W' : 4, 'M' : 12, 'Y' : 10, 'C' : 0, 'G': 0, 'F' : 0 }[new_task.period]) if i not in active_intervals]
+    return active_intervals
 
-            # add all templates for current task
-            new_task.template_counter = 0
-            if val['template_counter'] != '':
-                new_task.template_counter = int(val['template_counter'])
-                
-
-def copy_template(dst, src):
+def copy_template(dst, src, ):
     dst.descriprion = src.descriprion
     dst.priority = src.priority
-    dst.is_habit = src.is_habit
+    dst.task_type = src.task_type
     dst.traking_type = src.traking_type
     dst.lost_time = src.lost_time
     dst.timer_state = src.timer_state
-    dst.decomposite_task = src.decomposite_task
     dst.period = src.period
-    dst.template_task = src.template_task
-    dst.task_statistic = src.task_statistic
     dst.task_state = src.task_state
-    dst.active_intervals = ''
-    dst.exclude_selected = False
-    dst.template_counter = 0   
 
 def add_task(json_data):
-    if not {'desr', 'priority', 'period', 'is_habit', 'traking', 'datetime_start'}.issubset(set(json_data)):
+    if not {'desr', 'priority', 'period', 'task_type', 'traking', 'datetime_start'}.issubset(set(json_data)):
         print('attribute error')
         return
 
     # add main task
     to_add = Task()
+    to_templ = None
     fill_task_params(json_data, to_add)   
     Task.save(to_add)
 
+    # add template params 
+    if json_data['template_intervals'] != None and json_data['template_intervals'] != '':   
+        if {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(json_data['template_intervals'])):
+            to_templ = Template()
+            to_templ.template_to = to_add
+            active_intervalss = fill_template_params(json_data['template_intervals'], to_templ)
+            Template.save(to_templ)
+        else:
+            print('attribute error')
+            return               
+
     # add template tasks
-    for interval in range(0, to_add.template_counter):
-        dt = to_add.task_begin
-        dt1 = to_add.task_end
-        dt.month = dt.month + interval
-        dt1.month = dt1.month + interval
-        for point in active_intervals:
-            dt.day = dt.day + point
-            dt1.day = dt1.day + point
-            template = Task()
-            copy_template(template, to_add)
-            template.task_begin = template.dt
-            template.task_end = template.dt1        
-            Task.save(template)
+    if to_templ != None:
+        for interval in range(1, to_templ.template_counter + 1):
+            dt = to_add.task_begin
+            dt1 = to_add.task_end
+            dt = dt.replace(month = dt.month + interval) 
+            dt1 = dt1.replace(month = dt1.month + interval) 
+            for point in active_intervalss:
+                dt = dt.replace(day = point)  
+                dt1 = dt1.replace(day = point)
+                template = Task()
+                copy_template(template, to_add)
+                template.template_of = to_add
+                template.task_begin = dt
+                template.task_end = dt1        
+                Task.save(template)
 
 def delete_task(json_data):
     if not {'desr', 'datetime_start'}.issubset(set(json_data)):
@@ -130,9 +144,11 @@ def delete_task(json_data):
     # delete main and template tasks
     tmp_dt = datetime.strptime(json_data["datetime_start"], "%m/%d/%Y %I:%M %p")
     to_del = Task.objects.filter(descriprion=json_data["desr"], task_begin=tmp_dt)
-    templates = Task.objects.filter(template=to_del[0].id)
-    to_del.delete()
-    templates.delete()
+    if len(to_del):
+        templates = Task.objects.filter(template_of=to_del[0])
+        templates.delete()
+        to_del.delete()
+
 
 
 def edit_task(old_data, new_data):
@@ -140,34 +156,64 @@ def edit_task(old_data, new_data):
         print('attribute error')
         return
 
-    if not {'desr', 'priority', 'period', 'is_habit', 'traking', 'datetime_start'}.issubset(set(new_data)):
+    if not {'desr', 'priority', 'period', 'task_type', 'traking', 'datetime_start'}.issubset(set(new_data)):
         print('attribute error')
         return
+
+    to_templ = None
 
     # edit main task
     tmp_dt = datetime.strptime(old_data["datetime_start"], "%m/%d/%Y %I:%M %p")
     to_edit = Task.objects.get(descriprion=old_data["desr"], task_begin=tmp_dt)
-    templates = Task.objects.filter(template=to_edit.id)
     fill_task_params(new_data, to_edit) 
     to_edit.save()
 
+    # TODO 
+
+    # edit template params 
+    try:
+        to_templ = Template.objects.get(template_to=to_edit)
+    except Template.DoesNotExist:
+        to_templ = None
+
+    if new_data['template_intervals'] != None and new_data['template_intervals'] != '':   
+        if {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(new_data['template_intervals'])):            
+            # 1. no template need to create
+            if to_templ == None:
+                to_templ = Template()  
+            # 2. is template, change params             
+            to_templ.template_to = to_edit
+            active_intervalss = fill_template_params(new_data['template_intervals'], to_templ)
+            Template.save(to_templ)
+        else:
+            print('attribute error')
+            return  
+    else:
+        # 3. is template, need to delete 
+        if to_templ != None:
+            to_templ.delete()
+            to_templ = None
+
     # delete template tasks
+    templates = Task.objects.filter(template_of=to_edit)
     templates.delete()
 
     # add template tasks
-    for interval in range(0, to_edit.template_counter):
-        dt = to_edit.task_begin
-        dt1 = to_edit.task_end
-        dt.month = dt.month + interval
-        dt1.month = dt1.month + interval
-        for point in active_intervals:
-            dt.day = dt.day + point
-            dt1.day = dt1.day + point
-            template = Task()
-            copy_template(template, to_edit)
-            template.task_begin = template.dt
-            template.task_end = template.dt1        
-            Task.save(template)    
+    if to_templ != None:
+        for interval in range(1, to_templ.template_counter + 1):
+            dt = to_edit.task_begin
+            dt1 = to_edit.task_end
+            dt = dt.replace(month = dt.month + interval) 
+            dt1 = dt1.replace(month = dt1.month + interval) 
+            for point in active_intervalss:
+                dt = dt.replace(day = point)  
+                dt1 = dt1.replace(day = point)
+                template = Task()
+                copy_template(template, to_edit)
+                template.template_of = to_edit
+                template.task_begin = dt
+                template.task_end = dt1        
+                Task.save(template)   
 
 
 def check_time(period_type, start, end):
@@ -221,28 +267,29 @@ def print_date(list_type):
             print('free')
 
 def default_tasks():
-    # Task.objects.all().delete()
-    tasks = Task.objects.all()
-    if len(tasks) == 0:
-        Task.objects.create(period='D', descriprion='learn python', priority='M', is_habit=True, traking_type='U')
-        Task.objects.create(period='D', descriprion='learn english', priority='M', is_habit=True, traking_type='U')
-        Task.objects.create(descriprion='workout', priority='M', is_habit=True, traking_type='U')
-        Task.objects.create(descriprion='homework', priority='M', is_habit=True, traking_type='U')
-        
-        Task.objects.create(period='D', descriprion='task1', priority='M', is_habit=True, traking_type='F', task_begin=datetime.now())
-        Task.objects.create(period='D', descriprion='task2', priority='M', is_habit=True, traking_type='F', task_begin=datetime.now())
-        Task.objects.create(period='D', descriprion='task3', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 15, 0, 0, 0, 0))
-        Task.objects.create(period='D', descriprion='task4', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-        Task.objects.create(period='D', descriprion='task5', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-        Task.objects.create(period='D', descriprion='task6', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-        Task.objects.create(period='D', descriprion='task7', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-        Task.objects.create(period='D', descriprion='task8', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
-        Task.objects.create(period='D', descriprion='task9', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
-        Task.objects.create(period='M', descriprion='task10', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2020, 8, 16, 0, 0, 0, 0))
-        Task.objects.create(period='Y', descriprion='task11', priority='M', is_habit=True, traking_type='F', task_begin=datetime(2021, 8, 16, 0, 0, 0, 0))
+    Task.objects.all().delete()
 
-        tasks = Task.objects.all()
-    print(1, tasks)
+    # tasks = Task.objects.all()
+    # if len(tasks) == 0:
+    #     Task.objects.create(period='D', descriprion='learn python', priority='M', task_type='S', traking_type='U')
+    #     Task.objects.create(period='D', descriprion='learn english', priority='M',  task_type='S', traking_type='U')
+    #     Task.objects.create(descriprion='workout', priority='M',  task_type='S', traking_type='U')
+    #     Task.objects.create(descriprion='homework', priority='M',  task_type='S', traking_type='U')
+        
+    #     Task.objects.create(period='D', descriprion='task1', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+    #     Task.objects.create(period='D', descriprion='task2', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+    #     Task.objects.create(period='D', descriprion='task3', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 15, 0, 0, 0, 0))
+    #     Task.objects.create(period='D', descriprion='task4', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+    #     Task.objects.create(period='D', descriprion='task5', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+    #     Task.objects.create(period='D', descriprion='task6', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+    #     Task.objects.create(period='D', descriprion='task7', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
+    #     Task.objects.create(period='D', descriprion='task8', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
+    #     Task.objects.create(period='D', descriprion='task9', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
+    #     Task.objects.create(period='M', descriprion='task10', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 8, 16, 0, 0, 0, 0))
+    #     Task.objects.create(period='Y', descriprion='task11', priority='M', task_type='S', traking_type='F', task_begin=datetime(2021, 8, 16, 0, 0, 0, 0))
+
+    #     tasks = Task.objects.all()
+    # print(1, tasks)
 
 def check_task(list_type, json_data):
     if list_type[0] == 'd':
@@ -259,11 +306,18 @@ def task_to_dict(task, exclude, level):
     if level > 2:
         return
 
-    template = {   
-        'active_intervals' :            str(task.active_intervals),
-        'exclude_selected' :            str(task.exclude_selected),
-        'template_counter' :            str(task.template_counter)
-    }
+    template = ''
+    is_tmpl = None
+    try:
+        is_tmpl = Template.objects.get(template_to=task)
+    except Exception as e:
+        print(e)
+    if is_tmpl != None:
+        template = {   
+            'active_intervals' :            str(is_tmpl.active_intervals),
+            'exclude_selected' :            str(is_tmpl.exclude_selected),
+            'template_counter' :            str(is_tmpl.template_counter)
+        }
 
     ret = {
         'desr' :                        task.descriprion,
@@ -271,7 +325,7 @@ def task_to_dict(task, exclude, level):
         'datetime_start' :              task.task_begin.strftime("%m/%d/%Y %I:%M %p"),          
         'traking'  :                    task.get_traking_type_display(),
         'period'   :                    task.get_period_display(),
-        'is_habit' :                    str(task.is_habit),
+        'task_type' :                   task.get_task_type_display(),
         'datetime_end' :                task.task_end.strftime("%m/%d/%Y %I:%M %p"),
         'lost_time' :                   str(task.lost_time),
         'template_intervals' :          template
@@ -306,9 +360,13 @@ def get_tasks(list_type):
 
         tasks2 = [json.dumps(task_dict) for task_dict in tasks2 if task_dict not in exclude_list]
         # add template tasks
-        for task in tasks:
-            tasks2.extend([json.dumps(task_to_dict(t_task)) for t_task in Task.objects.filter(period='D', template=task)])
-
+        # for task in tasks:
+        #     try:
+        #         templates = Task.objects.filter(period='D', template_of=task)
+        #         for template in templates:
+        #             tasks2.append(json.dumps(task_to_dict(template, exclude_list, 0)))
+        #     except Exception as e:
+        #         print(e)
 
             
     elif list_type[0] == 'w':
@@ -344,6 +402,16 @@ def get_tasks(list_type):
                 for point in range(0,10):
                     if task.template_intervals & (1 << point):
                         tasks2.append(repr(task))   
+    elif list_type[0] == 'f':
+        tasks = Task.objects.all()
+        tasks2 = []
+        exclude_list = []
+        # add simple and decomposite tasks
+        for task in tasks:
+            task_dict = task_to_dict(task, exclude_list, 0)
+            tasks2.append(task_dict)
+
+        tasks2 = [json.dumps(task_dict) for task_dict in tasks2 if task_dict not in exclude_list]
 
     return tasks2
 

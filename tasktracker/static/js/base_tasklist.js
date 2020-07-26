@@ -385,18 +385,23 @@ getTaskData = function () {
         }
     }
       
-    let template = {   
-        "active_intervals" :            $("#active_days_input2").val(),
-        "exclude_selected" :            $("#exclude_selected2").is(':checked'),
-        "template_counter" :            $("#repeat_counter_form").val()
-    };
+    let template = ''; 
+    if ($("#task_type_dropdown_button").text() === 'Template')
+    {
+        template = {   
+            "active_intervals" :            $("#active_days_input2").val(),
+            "exclude_selected" :            $("#exclude_selected2").is(':checked'),
+            "template_counter" :            $("#repeat_counter_form").val()
+        };
+    }
+
 
     let data = {
         "desr"     :                    $("#exampleFormControlTextarea1").val(),
         "priority" :                    $("#task_priority_dropdown_button").text(),
         "traking"  :                    $("#traking_type_dropdown_button").text(),
         "period"   :                    $("#task_period_dropdown_button").text(),
-        "is_habit" :                    $("#is_habit").is(':checked'),
+        "task_type" :                   $("#task_type_dropdown_button").text(),
         "datetime_start" :              start,
         "datetime_end" :                $("#datetimeinput2").val(),
         "parent_task" :                 $("#parent_task_input").val(),
@@ -470,15 +475,16 @@ fillModalWindow = function (entry) {
     $("#task_priority_dropdown_button").text(entry["priority"]);
     $("#traking_type_dropdown_button").text(entry["traking"]);
     $("#task_period_dropdown_button").text(entry["period"]);
+    $("#task_type_dropdown_button").text(entry["task_type"]);
     let state = (entry["is_habit"] === 'true') ? true : false;
     $("#is_habit").attr('checked', state);
     $("#datetimeinput1").val(entry["datetime_start"]);
     $("#datetimeinput2").val(entry["datetime_end"]);
     $("#parent_task_input").val(entry["parent_task"]);
-    $("#active_days_input2").val(entry["active_intervals"]);
-    state = (entry["exclude_selected"] === 'True') ? true : false;
+    $("#active_days_input2").val(entry["template_intervals"]["active_intervals"]);
+    state = (entry["template_intervals"]["exclude_selected"] === 'True') ? true : false;
     $("#exclude_selected2").attr('checked', state);
-    $("#repeat_counter_form").val(entry["template_counter"]);
+    $("#repeat_counter_form").val(entry["template_intervals"]["template_counter"]);
 };
 
 function clearModalWindow() {
@@ -486,6 +492,7 @@ function clearModalWindow() {
     $("#task_priority_dropdown_button").text("Medium");
     $("#traking_type_dropdown_button").text("Untracked");
     $("#task_period_dropdown_button").text("Day");
+    $("#task_type_dropdown_button").text("Simple");
     $("#is_habit").attr('checked', false);
     $("#datetimeinput1").val("");
     $("#datetimeinput2").val("");
@@ -541,6 +548,7 @@ $(function() {
                 $("#parent_task_input").val(descr);
                 $("#create_task_modal").modal('show');
                 $("#create_task_modal_save_button").text("Create task");
+                $("#task_type_dropdown_button").text("Decomposite");
             }
         },
         items: {
