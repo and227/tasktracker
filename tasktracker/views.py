@@ -215,92 +215,8 @@ def edit_task(old_data, new_data):
                 template.task_end = dt1        
                 Task.save(template)   
 
-
-def check_time(period_type, start, end):
-    res = False
-    cur_time = datetime.now()
-    start_time = datetime.strptime(start, "%m/%d.%Y %I.%M %p\n")
-    end_time = datetime.strptime(end, "%m/%d.%Y %I.%M %p\n")
-    if period_type == 'D':
-        if cur_time.day >= start_time.day and cur_time.day <= end_time.day:
-            res = True
-    elif period_type == 'W':
-        if cur_time.week >= start_time.week and cur_time.week <= end_time.week:
-            res = True
-    elif period_type == 'M':
-        if cur_time.month >= start_time.month and cur_time.month <= end_time.month:
-            res = True
-    elif period_type == 'Y':
-        if cur_time.year >= start_time.year and cur_time.year <= end_time.year:
-            res = True
-    else:
-        res = True
-
-    return res
-
-def print_date(list_type):
-    if type(list_type) == str:
-        if list_type[0] == 'd':
-            print('day')
-            day = list_type[1:3]
-            month = list_type[3:5]
-            year = list_type[5:7]
-            print(day, month, year)
-        elif list_type[0] == 'w':
-            print('week')
-            week = list_type[1]
-            month = list_type[2:4]
-            year = list_type[4:6]
-            print(week, month, year)
-        elif list_type[0] == 'm':
-            print('month')
-            month = list_type[1:3]
-            year = list_type[3:5]
-            print(month, year)
-        elif list_type[0] == 'y':
-            print('year')
-            year = list_type[1:3]
-            print(year)
-        elif list_type[0] == 'g':
-            print('global')
-        elif list_type[0] == 'f':
-            print('free')
-
 def default_tasks():
     Task.objects.all().delete()
-
-    # tasks = Task.objects.all()
-    # if len(tasks) == 0:
-    #     Task.objects.create(period='D', descriprion='learn python', priority='M', task_type='S', traking_type='U')
-    #     Task.objects.create(period='D', descriprion='learn english', priority='M',  task_type='S', traking_type='U')
-    #     Task.objects.create(descriprion='workout', priority='M',  task_type='S', traking_type='U')
-    #     Task.objects.create(descriprion='homework', priority='M',  task_type='S', traking_type='U')
-        
-    #     Task.objects.create(period='D', descriprion='task1', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
-    #     Task.objects.create(period='D', descriprion='task2', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
-    #     Task.objects.create(period='D', descriprion='task3', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 15, 0, 0, 0, 0))
-    #     Task.objects.create(period='D', descriprion='task4', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-    #     Task.objects.create(period='D', descriprion='task5', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-    #     Task.objects.create(period='D', descriprion='task6', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-    #     Task.objects.create(period='D', descriprion='task7', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 16, 0, 0, 0, 0))
-    #     Task.objects.create(period='D', descriprion='task8', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
-    #     Task.objects.create(period='D', descriprion='task9', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 7, 17, 0, 0, 0, 0))
-    #     Task.objects.create(period='M', descriprion='task10', priority='M', task_type='S', traking_type='F', task_begin=datetime(2020, 8, 16, 0, 0, 0, 0))
-    #     Task.objects.create(period='Y', descriprion='task11', priority='M', task_type='S', traking_type='F', task_begin=datetime(2021, 8, 16, 0, 0, 0, 0))
-
-    #     tasks = Task.objects.all()
-    # print(1, tasks)
-
-def check_task(list_type, json_data):
-    if list_type[0] == 'd':
-        day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
-        year = '20' + year
-        now = datetime(int(year), int(month), int(day), 0, 0, 0, 0) 
-        tasks = Task.objects.filter(descriprion=json_data['desr'], period='D', task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)  
-        if len(tasks) > 0:
-            return True
-        else:
-            return False
 
 def task_to_dict(task, exclude, level):
     if level > 2:
@@ -311,7 +227,7 @@ def task_to_dict(task, exclude, level):
     try:
         is_tmpl = Template.objects.get(template_to=task)
     except Exception as e:
-        print(e)
+        pass
     if is_tmpl != None:
         template = {   
             'active_intervals' :            str(is_tmpl.active_intervals),
@@ -345,75 +261,73 @@ def task_to_dict(task, exclude, level):
 
     return ret
 
-def get_tasks(list_type):
+def get_task_filter(list_type):
     if list_type[0] == 'd':
-        day, month, year = list_type[1:3], list_type[3:5], list_type[5:7]
-        year = '20' + year
-        now = datetime(int(year), int(month), int(day), 0, 0, 0, 0)
-        tasks = Task.objects.filter(period='D', task_begin__day=now.day, task_begin__month=now.month, task_begin__year=now.year)
-        tasks2 = []
-        exclude_list = []
-        # add simple and decomposite tasks
-        for task in tasks:
-            task_dict = task_to_dict(task, exclude_list, 0)
-            tasks2.append(task_dict)
-
-        tasks2 = [json.dumps(task_dict) for task_dict in tasks2 if task_dict not in exclude_list]
-        # add template tasks
-        # for task in tasks:
-        #     try:
-        #         templates = Task.objects.filter(period='D', template_of=task)
-        #         for template in templates:
-        #             tasks2.append(json.dumps(task_to_dict(template, exclude_list, 0)))
-        #     except Exception as e:
-        #         print(e)
-
-            
+        day, month, year = list_type[1:3], list_type[3:5], '20' + list_type[5:7]
+        args = {'period' : 'D', 'task_begin__day' : int(day), 'task_begin__month' : int(month), 'task_begin__year' : int(year)}
     elif list_type[0] == 'w':
-        week, month, year = list_type[1], list_type[2:4], list_type[4:6]
-        year = '20' + year
-        now = datetime(int(year), int(month), 0, 0, 0, 0, 0) #todo
-        tasks = Task.objects.filter(period='W')
-        tasks2 = [repr(task) for task in tasks.filter(period='W', task_begin__year=now.year, task_begin__month=now.month)]
-        for task in tasks:
-            for repetition in range(0,task.template_counter):
-                for point in range(0,4):
-                    if task.template_intervals & (1 << point):
-                        tasks2.append(repr(task))         
+        week, year = list_type[1:3], '20' + list_type[3:5]
+        args = {'period' : 'W', 'task_begin__year' : int(year), 'task_begin__week' : int(week)}
     elif list_type[0] == 'm':
-        month, year = list_type[1:3], list_type[3:5]
-        year = '20' + year
-        now = datetime(int(year), int(month), 1, 0, 0, 0, 0) 
-        tasks = Task.objects.filter(period='M')
-        tasks2 = [repr(task) for task in tasks.filter(task_begin__year=now.year, task_begin__month=now.month)]
-        for task in tasks:
-            for repetition in range(0,task.template_counter):
-                for point in range(0,12):
-                    if task.template_intervals & (1 << point):
-                        tasks2.append(repr(task))   
+        month, year = list_type[1:3], '20' + list_type[3:5]
+        args = {'period' : 'M', 'task_begin__year' : int(year), 'task_begin__month' : int(month)}
     elif list_type[0] == 'y':
-        year = list_type[1:3]
-        year = '20' + year
-        now = datetime(int(year), 0, 1, 0, 0, 0, 0) 
-        tasks = Task.objects.filter(period='Y')
-        tasks2 = [repr(task) for task in tasks.filter(task_begin__year=now.year)]
-        for task in tasks:
-            for repetition in range(0,task.template_counter):
-                for point in range(0,10):
-                    if task.template_intervals & (1 << point):
-                        tasks2.append(repr(task))   
+        year = '20' + list_type[1:3]
+        args = {'period' : 'Y', 'task_begin__year' : int(year)}
     elif list_type[0] == 'f':
+        args = {'period' : 'F'}
+    elif list_type[0] == 'g':
+        args = {'period' : 'G'}
+
+    return args
+
+def check_task(list_type, json_data):
+    args = get_task_filter(list_type)
+    args['descriprion'] = json_data['desr']
+    tasks = Task.objects.filter(**args)  
+    if len(tasks) > 0:
+        return True
+    else:
+        return False
+
+def get_tasks(list_type):
+    exclude_list = []
+    args = get_task_filter(list_type)
+
+    if args['period'] == 'F':
         tasks = Task.objects.all()
-        tasks2 = []
-        exclude_list = []
-        # add simple and decomposite tasks
-        for task in tasks:
-            task_dict = task_to_dict(task, exclude_list, 0)
-            tasks2.append(task_dict)
+    else: 
+        tasks = Task.objects.filter(**args)
 
-        tasks2 = [json.dumps(task_dict) for task_dict in tasks2 if task_dict not in exclude_list]
+    tasks = [task_to_dict(task, exclude_list, 0) for task in tasks]
+    tasks = [json.dumps(task) for task in tasks if task not in exclude_list]
 
-    return tasks2
+    return tasks
+
+# def get_tasks(list_type):
+#     exclude_list = []
+
+#     if list_type[0] == 'd':
+#         day, month, year = list_type[1:3], list_type[3:5], '20' + list_type[5:7]
+#         tasks = Task.objects.filter(period='D', task_begin__day=int(day), task_begin__month=int(month), task_begin__year=int(year))
+#     elif list_type[0] == 'w':
+#         week, month, year = list_type[1], list_type[2:4], '20' + list_type[4:6]
+#         tasks = Task.objects.filter(period='W', task_begin__year=int(year), task_begin_by_date__week=int(week))
+#     elif list_type[0] == 'm':
+#         month, year = list_type[1:3], '20' + list_type[3:5]
+#         tasks = Task.objects.filter(period='M', task_begin__year=int(year), task_begin__month=int(month))
+#     elif list_type[0] == 'y':
+#         year = '20' + list_type[1:3]
+#         tasks = Task.objects.filter(period='Y', task_begin__year=int(year))
+#     elif list_type[0] == 'f':
+#         tasks = Task.objects.all()
+#     elif list_type[0] == 'g':
+#         tasks = Task.objects.filter(period='G')
+
+#     tasks = [task_to_dict(task, exclude_list, 0) for task in tasks]
+#     tasks = [json.dumps(task) for task in tasks if task not in exclude_list]
+
+#     return tasks
 
 # ------------------------------------------------------------------------------  
 def general_task_list(request):

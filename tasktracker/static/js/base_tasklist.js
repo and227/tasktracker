@@ -246,12 +246,108 @@ $(document).on('change', '.list-group-item input', function () {
     }
 });
 
+function add_datetime_inpute()
+{
+    let datetime_select_template = $("#datetime_select").html();
+    // Create a new row from the template
+    let datetime_select_templ = $(datetime_select_template); 
 
-//update all dropdowns //todo
+    let label = datetime_select_templ.find("label");
+    label.text("Datetime start: ");
+    let input = datetime_select_templ.find("#dt");
+    input.attr("id", "datetimepicker1");
+    input = datetime_select_templ.find(".form-control");
+    input.attr("data-target", "#datetimepicker1");
+    input.attr("id", "datetimeinput1");
+    input = datetime_select_templ.find(".input-group-append");
+    input.attr("data-target", "#datetimepicker1");
+    datetime_select_templ.insertAfter("#task_settings");
+
+    datetime_select_template = $("#datetime_select").html();
+    datetime_select_templ = $(datetime_select_template); 
+    label = datetime_select_templ.find("label");
+    label.text("Datetime end: ");
+    input = datetime_select_templ.find("#dt");
+    input.attr("id", "datetimepicker2");
+    input = datetime_select_templ.find(".form-control");
+    input.attr("data-target", "#datetimepicker2");
+    input.attr("id", "datetimeinput2");
+    input = datetime_select_templ.find(".input-group-append");
+    input.attr("data-target", "#datetimepicker2");
+    datetime_select_templ.insertAfter("#datetimepicker1");
+
+    $("#datetimepicker1").datetimepicker();
+    $("#datetimepicker2").datetimepicker();
+}
+
+function add_time_inpute()
+{
+    let time_select_template = $("#time_select").html();
+    // Create a new row from the template
+    let time_select_templ = $(time_select_template); 
+
+    time_select_templ.insertAfter("#task_settings");
+
+    $(".timepicker").timepicker({
+        'timeFormat': 'H : i',
+        'step': 1 
+    });  
+}
+
+function add_template_inpute()
+{
+    let time_select_template = $("#template_task").html();
+    // Create a new row from the template
+    let time_select_templ = $(time_select_template); 
+    $(".modal-body").append(time_select_templ);
+}
+
+function add_decomposite_inpute()
+{
+    let time_select_template = $("#decomposite_task").html();
+    // Create a new row from the template
+    let time_select_templ = $(time_select_template); 
+    $(".modal-body").append(time_select_templ);
+}
+
+//update all dropdowns 
 $(document).on('click', '.btn-group a ', function () {
-//$(".btn-group a ").click(function () {
     let p =  $(this).parent().parent();
-    p.find('.btn').text($(this).text());
+    let new_option = $(this).text();
+    p.find('.btn').text(new_option);
+
+    if (new_option == "Untracked")
+    {
+        $(".modal-body").find(".datetime-forms").remove();
+    }
+    else if (new_option == "Fixed")
+    {
+        $(".modal-body").find(".datetime-forms").remove();
+        add_datetime_inpute();
+    }
+    else if (new_option == "Period")
+    {
+        $(".modal-body").find(".datetime-forms").remove();
+        add_time_inpute();    
+    }
+    else if (new_option == "Simple")
+    {
+        $(".modal-body").find(".decomp-task-forms").remove();
+        $(".modal-body").find(".template-task-forms").remove();              
+    }
+    else if (new_option == "Template")
+    {
+        $(".modal-body").find(".decomp-task-forms").remove();
+        $(".modal-body").find(".template-task-forms").remove();  
+        add_template_inpute();
+
+    }
+    else if (new_option == "Decomposite")
+    {
+        $(".modal-body").find(".decomp-task-forms").remove();
+        $(".modal-body").find(".template-task-forms").remove();  
+        add_decomposite_inpute();
+    }
 });
 
 
@@ -267,8 +363,7 @@ get_period = function (period, time) {
             break;
         case "Week":
             url += "w";
-            url += (time.getWeek() < 10) ? ('0' + String(time.getWeek())) : String(time.getWeek());
-            url += (time.getMonth() < 9) ? ('0' + String(time.getMonth() + 1)) : String(time.getMonth() + 1);
+            url += (time.getWeek() < 9) ? ('0' + String(time.getWeek() + 1)) : String(time.getWeek() + 1);
             url += (String(time.getFullYear())).substring(2,4) + '/';
             break;
         case "Month":
@@ -281,10 +376,10 @@ get_period = function (period, time) {
             url += (String(time.getFullYear())).substring(2,4) + '/';
             break;
         case "Global":
-            url += "g";
+            url += "g" + '/';
             break;
         case "Free":
-            url += "f";
+            url += "f" + '/';
             break;
     }
 
@@ -351,14 +446,6 @@ $(document).on('click', '.btn', function () {
         update_tasks(tasklist_settings, $(this).text())
     });
 
-$(function () {
-    $("#datetimepicker2").datetimepicker();
-});
-
-$(function () {
-    $("#datetimepicker1").datetimepicker();
-});
-
 getTaskData = function () {
     let start = $("#datetimeinput1").val();
     if ((start === "") || (start === undefined))
@@ -404,6 +491,7 @@ getTaskData = function () {
         "task_type" :                   $("#task_type_dropdown_button").text(),
         "datetime_start" :              start,
         "datetime_end" :                $("#datetimeinput2").val(),
+        "lost_time" :                   $("#timeinput1").val(),
         "parent_task" :                 $("#parent_task_input").val(),
         "template_intervals" :          template
     };
@@ -478,20 +566,52 @@ fillModalWindow = function (entry) {
     $("#task_type_dropdown_button").text(entry["task_type"]);
     let state = (entry["is_habit"] === 'true') ? true : false;
     $("#is_habit").attr('checked', state);
-    $("#datetimeinput1").val(entry["datetime_start"]);
-    $("#datetimeinput2").val(entry["datetime_end"]);
-    $("#parent_task_input").val(entry["parent_task"]);
-    $("#active_days_input2").val(entry["template_intervals"]["active_intervals"]);
-    state = (entry["template_intervals"]["exclude_selected"] === 'True') ? true : false;
-    $("#exclude_selected2").attr('checked', state);
-    $("#repeat_counter_form").val(entry["template_intervals"]["template_counter"]);
+    // fill tracking
+    if (entry["traking"] == "Fixed")
+    {
+        $(".modal-body").find(".datetime-forms").remove();
+        add_datetime_inpute();
+        $("#datetimeinput1").val(entry["datetime_start"]);
+        $("#datetimeinput2").val(entry["datetime_end"]);
+    }
+    else if (entry["traking"] == "Period")
+    {
+        $(".modal-body").find(".datetime-forms").remove();
+        add_time_inpute();
+        $("#timeinput1").val(entry["lost_time"]);
+    }
+    else 
+        $(".modal-body").find(".datetime-forms").remove();
+    // fill type
+    if (entry["task_type"] === "Decomposite")
+    {
+        $(".modal-body").find(".decomp-task-forms").remove();
+        $(".modal-body").find(".template-task-forms").remove(); 
+        add_decomposite_inpute();
+        $("#parent_task_input").val(entry["parent_task"]);
+    }
+    else if (entry["task_type"] === "Template")
+    {
+        $(".modal-body").find(".decomp-task-forms").remove();
+        $(".modal-body").find(".template-task-forms").remove(); 
+        add_template_inpute();
+        $("#active_days_input2").val(entry["template_intervals"]["active_intervals"]);
+        state = (entry["template_intervals"]["exclude_selected"] === 'True') ? true : false;
+        $("#exclude_selected2").attr('checked', state);
+        $("#repeat_counter_form").val(entry["template_intervals"]["template_counter"]);
+    }
+    else 
+    {
+        $(".modal-body").find(".decomp-task-forms").remove();
+        $(".modal-body").find(".template-task-forms").remove();        
+    }
 };
 
 function clearModalWindow() {
     $("#exampleFormControlTextarea1").val("");
     $("#task_priority_dropdown_button").text("Medium");
     $("#traking_type_dropdown_button").text("Untracked");
-    $("#task_period_dropdown_button").text("Day");
+    $("#task_period_dropdown_button").text(tasklist_settings.type);
     $("#task_type_dropdown_button").text("Simple");
     $("#is_habit").attr('checked', false);
     $("#datetimeinput1").val("");
@@ -500,6 +620,10 @@ function clearModalWindow() {
     $("#active_days_input2").val("");
     $("#exclude_selected2").attr('checked', false);
     $("#repeat_counter_form").val("");
+
+    $(".modal-body").find(".datetime-forms").remove();
+    $(".modal-body").find(".decomp-task-forms").remove();
+    $(".modal-body").find(".template-task-forms").remove();  
 };
 
 $(function() {
@@ -545,6 +669,7 @@ $(function() {
             {
                 let descr = $(this).find(".descr").text();
                 clearModalWindow();
+                // add decomposite task impute
                 $("#parent_task_input").val(descr);
                 $("#create_task_modal").modal('show');
                 $("#create_task_modal_save_button").text("Create task");

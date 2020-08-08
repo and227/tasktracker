@@ -53,7 +53,7 @@
                 </form>
 
                 <!-- Task settings -->
-                <div class="btn-group" role="group">
+                <div class="btn-group" role="group" id="task_settings">
                     
                     <!-- Priority -->
                     <div class="dropdown">
@@ -101,8 +101,35 @@
 
                 </div>
 
+                <template id="datetime_select">
+                    <div class="datetime-forms">
+                        <div class="mr-2 my-2">
+                            <label>Datetime start: </label>
+                        </div>
+                    
+                        <div class="input-group date mr-2 my-2" id="dt" data-target-input="nearest">
+                            <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker" id="datetimeinput"/>
+                            <div class="input-group-append" data-target="#datetimepicker" data-toggle="datetimepicker">
+                                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                            </div>
+                        </div>  
+                    </div>             
+                </template>
+                
+                <template id="time_select">
+                    <div class="datetime-forms">
+                        <div class="mr-2 my-2">
+                            <label>Time for task: </label>
+                        </div>
+                    
+                        <div class="input-group date mr-2 my-2" id="dt" data-target-input="nearest">
+                            <input type="text" class="form-control timepicker" data-target="#timepicker1" id="timeinput1"/>
+                        </div>  
+                    </div>        
+                </template>
+
                 <!-- Datetime start -->
-                <div class="mr-2 my-2">
+                <!-- <div class="mr-2 my-2">
                     <label>Datetime start: </label>
                 </div>
             
@@ -111,10 +138,10 @@
                     <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
                         <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                     </div>
-                </div>
+                </div> -->
                 
                 <!-- Datetime end -->
-                <div class="mr-2 my-2">
+                <!-- <div class="mr-2 my-2">
                     <label>Datetime end: </label>
                 </div>
 
@@ -123,42 +150,54 @@
                     <div class="input-group-append" data-target="#datetimepicker2" data-toggle="datetimepicker">
                         <div class="input-group-text"><i class="fa fa-calendar"></i></div>
                     </div>
-                </div>
+                </div> -->
+
+                <template id="decomposite_task">
+                    <div class="decomp-task-forms mr-2 my-2">
+                        <label>Parent task: </label>
+                        <form class="form-inline" id="parent_task_form">
+                            <input class="form-control mr-sm-2" type="search" placeholder="parent task" id="parent_task_input">
+                        </form>    
+                    </div>
+                </template>
 
                 <!-- Decomposite task -->
-                <div class="mr-2 my-2">
+                <!-- <div class="mr-2 my-2">
                     <label>Parent task: </label>
                     <form class="form-inline" id="parent_task_form">
                         <input class="form-control mr-sm-2" type="search" placeholder="parent task" id="parent_task_input">
                     </form>    
-                </div>
+                </div> -->
 
                 <!-- Template --> 
-                <div class="mr-2 my-2">
-                    <label>Template: </label>
-                </div>
-
-                <div class="mr-2 my-2">
-
-                    <!-- Template intervals -->
-                    <div class="input-group date mr-2 my-2" id="active_days_form2">
-                        <input type="text mr-sm-2" class="form-control" placeholder="active days" id="active_days_input2"/>
+                <template id="template_task">
+                    <div class="template-task-forms">
+                        <div class="mr-2 my-2">
+                            <label>Template: </label>
+                        </div>
+        
+                        <div class="mr-2 my-2">
+        
+                            <!-- Template intervals -->
+                            <div class="input-group date mr-2 my-2" id="active_days_form2">
+                                <input type="text mr-sm-2" class="form-control" placeholder="active days" id="active_days_input2"/>
+                            </div>
+        
+                            <!-- Exclude selected -->
+                            <div class="custom-control custom-checkbox mr-2 my-2">
+                                <input type="checkbox" class="custom-control-input" id="exclude_selected2">
+                                <label class="custom-control-label" for="exclude_selected2">Exclude selected</label>
+                            </div>
+        
+                            <!-- Template counter -->
+                            <div class="input-group date mr-2 my-2" id="repeat_counter">
+                                <input type="text mr-sm-2" class="form-control" placeholder="repeat counter" id="repeat_counter_form"/>
+                            </div>
+        
+                        </div>
                     </div>
-
-                    <!-- Exclude selected -->
-                    <div class="custom-control custom-checkbox mr-2 my-2">
-                        <input type="checkbox" class="custom-control-input" id="exclude_selected2">
-                        <label class="custom-control-label" for="exclude_selected2">Exclude selected</label>
-                    </div>
-
-                    <!-- Template counter -->
-                    <div class="input-group date mr-2 my-2" id="repeat_counter">
-                        <input type="text mr-sm-2" class="form-control" placeholder="repeat counter" id="repeat_counter_form"/>
-                    </div>
-
-                </div>
-
-
+                </template>
+                
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal" id="create_task_modal_close_button">Close</button>
