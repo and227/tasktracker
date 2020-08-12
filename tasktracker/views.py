@@ -5,97 +5,10 @@ import json
 from datetime import datetime, timezone
 import re
 
-def fill_task_params(json_data, new_task):
-    for key in json_data:
-        val = json_data[key]
-        # desr
-        if key == 'desr':
-            new_task.descriprion = val
-        # priority
-        elif key == 'priority':
-            for sh, lg in PRIORYITY_TYPES:
-                if val == lg:
-                    new_task.priority = sh
-                    break
-            else: 
-                print('attribute error')
-                return
-        # period        
-        elif key == 'period':
-            for sh, lg in PERIOD_TYPES:
-                if val == lg:
-                    new_task.period = sh
-                    break
-            else: 
-                print('attribute error')
-                return
-        # traking
-        elif key == 'traking':
-            for sh, lg in TRAKING_TYPES:
-                if val == lg:
-                    new_task.traking_type = sh
-                    break
-            else: 
-                print('attribute error')
-                return
-        # task_type   
-        elif key == 'task_type':
-            for sh, lg in TASK_TYPES:
-                if val == lg:
-                    new_task.task_type = sh
-                    break
-            else: 
-                print('attribute error')
-                return           
-        elif key == 'datetime_start' and val != '':
-            tmp_dt = datetime.strptime(val, "%m/%d/%Y %I:%M %p")
-            new_task.task_begin = tmp_dt
-        elif key == 'datetime_end' and val != '':
-            tmp_dt = datetime.strptime(val, "%m/%d/%Y %I:%M %p")
-            new_task.task_end = tmp_dt
-        elif key == 'parent_task':
-            if val != '':
-                parent_task = Task.objects.get(descriprion=val)
-                new_task.decomposite_task = parent_task
-            else:
-                new_task.decomposite_task = None
-            # tmp_dt = Task.objects.get(descriprion=val).id
-            # new_task.decomposite_task = tmp_dt
-
-def fill_template_params(json_data, new_template):
-    # template_statistic
-    new_template.template_statistic = 0
-    # active_intervals
-    new_template.active_intervals = json_data['active_intervals']
-    ranges = re.findall(r'[0-9]{1,2}-[0-9]{1,2}', new_template.active_intervals)
-    active_intervals = new_template.active_intervals.split(',')
-    for r in ranges:
-        active_intervals.remove(r)
-    if len(active_intervals) > 0 and active_intervals[0] != '':
-        active_intervals = list(map(int, active_intervals))
-    ranges = [range(int(r.split('-')[0]), int(r.split('-')[1])+1) for r in ranges]
-    for r in ranges:
-        active_intervals.extend(r)
-    # exclude_selected
-    new_template.exclude_selected = True if json_data['exclude_selected'] == 'True' else False
-    if new_template.exclude_selected == True:
-        active_intervals = [i for i in range(0,{ 'D' : 7, 'W' : 4, 'M' : 12, 'Y' : 10, 'C' : 0, 'G': 0, 'F' : 0 }[new_task.period]) if i not in active_intervals]
-    # template_counter
-    new_template.template_counter = 0
-    if json_data['template_counter'] != '':
-        new_template.template_counter = int(json_data['template_counter'])   
-
-    return active_intervals
-
-def copy_template(dst, src, ):
-    dst.descriprion = src.descriprion
-    dst.priority = src.priority
-    dst.task_type = src.task_type
-    dst.traking_type = src.traking_type
-    dst.lost_time = src.lost_time
-    dst.timer_state = src.timer_state
-    dst.period = src.period
-    dst.task_state = src.task_state
+from rest_framework.response import Response 
+from rest_framework.views import APIView
+from .serializers import TaskSerializer
+from django.shortcuts import redirect
 
 def add_task(json_data):
     if not {'desr', 'priority', 'period', 'task_type', 'traking', 'datetime_start'}.issubset(set(json_data)):
@@ -218,6 +131,28 @@ def edit_task(old_data, new_data):
 def default_tasks():
     Task.objects.all().delete()
 
+    tasks = Task.objects.all()
+    if len(tasks) == 0:
+        Task.objects.create(period='D', descriprion='learn python', priority='M', task_type='S', traking_type='U')
+        Task.objects.create(period='D', descriprion='learn english', priority='M',  task_type='S', traking_type='U')
+        Task.objects.create(descriprion='workout', priority='M',  task_type='S', traking_type='U')
+        Task.objects.create(descriprion='homework', priority='M',  task_type='S', traking_type='U')
+        
+        Task.objects.create(period='D', descriprion='task1', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task2', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task3', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task4', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task5', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task6', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task7', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task8', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='D', descriprion='task9', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='M', descriprion='task10', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+        Task.objects.create(period='Y', descriprion='task11', priority='M', task_type='S', traking_type='F', task_begin=datetime.now())
+
+        tasks = Task.objects.all()
+    print(1, tasks)
+
 def task_to_dict(task, exclude, level):
     if level > 2:
         return
@@ -283,7 +218,7 @@ def get_task_filter(list_type):
 
 def check_task(list_type, json_data):
     args = get_task_filter(list_type)
-    args['descriprion'] = json_data['desr']
+    args['descriprion'] = json_data['descriprion']
     tasks = Task.objects.filter(**args)  
     if len(tasks) > 0:
         return True
@@ -299,8 +234,8 @@ def get_tasks(list_type):
     else: 
         tasks = Task.objects.filter(**args)
 
-    tasks = [task_to_dict(task, exclude_list, 0) for task in tasks]
-    tasks = [json.dumps(task) for task in tasks if task not in exclude_list]
+    # tasks = [task_to_dict(task, exclude_list, 0) for task in tasks]
+    # tasks = [json.dumps(task) for task in tasks if task not in exclude_list]
 
     return tasks
 
@@ -333,6 +268,55 @@ def get_tasks(list_type):
 def general_task_list(request):
     default_tasks()
     return render(request, 'tasktracker/base_tasklist.html') 
+
+class TaskView(APIView):
+    def get(self, request, list_type):
+        if request.is_ajax():
+            print('ajax', request.method)
+            tasks = get_tasks(list_type)
+            serializer = TaskSerializer(tasks, many=True)
+            print(3, serializer.data)
+            return Response({'tasks': serializer.data})
+            # return HttpResponse({'tasks': serializer.data}, content_type="application/json")
+        else: 
+            return render(request, 'tasktracker/base_tasklist.html')
+
+    def post(self, request, list_type):
+        json_data = json.loads(request.body)
+        try:
+            serializer = TaskSerializer(data=json_data["data"])
+            if serializer.is_valid(raise_exception=True): # todo validation
+                serializer.save()           
+        except Exception as e:
+            print(e)
+
+        print(serializer.validated_data)
+
+        return self.get(request, list_type)
+
+    def put(self, request, list_type):
+        json_data = json.loads(request.body)
+        try:
+            tmp_dt = datetime.strptime(json_data["old_data"]["datetime_start"], "%m/%d/%Y %I:%M %p")
+            to_edit = Task.objects.get(descriprion=json_data["old_data"]["descriprion"], task_begin=tmp_dt)
+            serializer = TaskSerializer(instance=to_edit, data=json_data["data"], partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+        except Exception as e:
+            print(e)
+
+        return self.get(request, list_type)
+    
+    def delete(self, request, list_type):
+        json_data = json.loads(request.body)
+        # delete main and template tasks
+        tmp_dt = datetime.strptime(json_data["datetime_start"], "%m/%d/%Y %I:%M %p")
+        to_del = Task.objects.filter(descriprion=json_data["descriprion"], task_begin=tmp_dt)
+        if len(to_del):
+            templates = Task.objects.filter(template_of=to_del[0])
+            templates.delete()
+            to_del.delete()
+    
 
 def task_list(request, list_type):   
     if request.is_ajax():

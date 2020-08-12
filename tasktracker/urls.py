@@ -16,12 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from .views import general_task_list, task_list, calendar_view
+from .views import general_task_list, task_list, calendar_view, TaskView
 
 urlpatterns = [
     #path('admin/', admin.site.urls),
     path('tasklist/', general_task_list),
-    path('tasklist/<str:list_type>/', task_list),
+    path('tasklist/<str:list_type>/', TaskView.as_view()),
     path('calendar/', calendar_view),
 ]
     

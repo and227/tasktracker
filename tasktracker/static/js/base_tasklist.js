@@ -43,21 +43,21 @@ add_template_element = function(list_to_append, task_descr, index) {
     var list_elem_templ = $(template1);
     // button
     var btn = list_elem_templ.find(".btn");
-    if ((task_descr["traking"] !== "Fixed") && (task_descr["traking"] !== "Period"))
+    if ((task_descr["traking_type"] !== "Fixed") && (task_descr["traking_type"] !== "Period"))
     {
         btn.addClass("op_text"); 
         btn.css("pointer-events","none");
     }
     // description
     var media_body = list_elem_templ.find(".media-body");
-    media_body.append($("<span/>").addClass("descr" + ' ' + prior_class).text(task_descr["desr"]));
+    media_body.append($("<span/>").addClass("descr" + ' ' + prior_class).text(task_descr["descriprion"]));
     // tracking
-    if (task_descr["traking"] === "Fixed")
+    if (task_descr["traking_type"] === "Fixed")
     {
         media_body.append($("<span/>").addClass("start_time").text(task_descr["datetime_start"]));
         media_body.append($("<span/>").addClass("end_time").text(task_descr["datetime_end"]));
     }
-    else if (task_descr["traking"] === "Period")
+    else if (task_descr["traking_type"] === "Period")
     {
         media_body.append($("<span/>").addClass("lost_time").text(task_descr["lost_time"]));
     }
@@ -65,18 +65,18 @@ add_template_element = function(list_to_append, task_descr, index) {
     list_elem_templ.find(".custom-control-input").attr("id", "defaultCheck" + index);
     list_elem_templ.find(".custom-control-label").attr("for", "defaultCheck" + index);
 
-    if (task_descr['parent_task'] !== undefined && task_descr['parent_task'].length > 0)
+    if (task_descr['decomposite_task'] !== null && task_descr['decomposite_task'] !== undefined && task_descr['decomposite_task'].length > 0)
     {
         in_list = list_elem_templ.children(".list-group"); //.children(".contain")
         $("<div/>").addClass("break").insertBefore(in_list);
-        for (var [i, t] of task_descr['parent_task'].entries())
+        for (var [i, t] of task_descr['decomposite_task'].entries())
         {
             add_template_element(in_list, t, index + 'L' + String(i));
         }
     }
 
     // save task in local storage for update need
-    sessionStorage.setItem(task_descr["desr"], JSON.stringify(task_descr))
+    sessionStorage.setItem(task_descr["descriprion"], JSON.stringify(task_descr))
 
     list_to_append.append(list_elem_templ);
 };
@@ -91,11 +91,11 @@ fill_tasks = function (tasks, tasks_url) {
         sessionStorage.clear();
         for (var [index, task] of tasks["tasks"].entries())
         {
-            console.log(typeof task);
-            var task_obj = JSON.parse(task)
-            console.log(task_obj);
+            // console.log(typeof task);
+            // var task_obj = JSON.parse(task)
+            // console.log(task_obj);
 
-            add_template_element($("#current_tasklist"), task_obj, String(index));
+            add_template_element($("#current_tasklist"), task, String(index));
         }
     }
 };
@@ -484,13 +484,13 @@ getTaskData = function () {
 
 
     let data = {
-        "desr"     :                    $("#exampleFormControlTextarea1").val(),
+        "descriprion"     :             $("#exampleFormControlTextarea1").val(),
         "priority" :                    $("#task_priority_dropdown_button").text(),
-        "traking"  :                    $("#traking_type_dropdown_button").text(),
+        "traking_type"  :               $("#traking_type_dropdown_button").text(),
         "period"   :                    $("#task_period_dropdown_button").text(),
         "task_type" :                   $("#task_type_dropdown_button").text(),
-        "datetime_start" :              start,
-        "datetime_end" :                $("#datetimeinput2").val(),
+        "task_begin" :                  start,
+        "task_end" :                    $("#datetimeinput2").val(),
         "lost_time" :                   $("#timeinput1").val(),
         "parent_task" :                 $("#parent_task_input").val(),
         "template_intervals" :          template
@@ -559,22 +559,22 @@ get_description = function(context) {
 };
 
 fillModalWindow = function (entry) {
-    $("#exampleFormControlTextarea1").val(entry["desr"]);
+    $("#exampleFormControlTextarea1").val(entry["descriprion"]);
     $("#task_priority_dropdown_button").text(entry["priority"]);
-    $("#traking_type_dropdown_button").text(entry["traking"]);
+    $("#traking_type_dropdown_button").text(entry["traking_type"]);
     $("#task_period_dropdown_button").text(entry["period"]);
     $("#task_type_dropdown_button").text(entry["task_type"]);
     let state = (entry["is_habit"] === 'true') ? true : false;
     $("#is_habit").attr('checked', state);
     // fill tracking
-    if (entry["traking"] == "Fixed")
+    if (entry["traking_type"] == "Fixed")
     {
         $(".modal-body").find(".datetime-forms").remove();
         add_datetime_inpute();
         $("#datetimeinput1").val(entry["datetime_start"]);
         $("#datetimeinput2").val(entry["datetime_end"]);
     }
-    else if (entry["traking"] == "Period")
+    else if (entry["traking_type"] == "Period")
     {
         $(".modal-body").find(".datetime-forms").remove();
         add_time_inpute();
