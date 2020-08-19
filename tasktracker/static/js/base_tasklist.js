@@ -48,6 +48,9 @@ add_template_element = function(list_to_append, task_descr, index) {
         btn.addClass("op_text"); 
         btn.css("pointer-events","none");
     }
+    // id 
+    let id = list_elem_templ.attr("data-taskid"); 
+    list_elem_templ.attr("data-taskid", task_descr["id"]); 
     // description
     var media_body = list_elem_templ.find(".media-body");
     media_body.append($("<span/>").addClass("descr" + ' ' + prior_class).text(task_descr["descriprion"]));
@@ -65,18 +68,18 @@ add_template_element = function(list_to_append, task_descr, index) {
     list_elem_templ.find(".custom-control-input").attr("id", "defaultCheck" + index);
     list_elem_templ.find(".custom-control-label").attr("for", "defaultCheck" + index);
 
-    if (task_descr['decomposite_task'] !== null && task_descr['decomposite_task'] !== undefined && task_descr['decomposite_task'].length > 0)
+    if (task_descr['subtasks'] !== null && task_descr['subtasks'] !== undefined && task_descr['subtasks'].length > 0)
     {
         in_list = list_elem_templ.children(".list-group"); //.children(".contain")
         $("<div/>").addClass("break").insertBefore(in_list);
-        for (var [i, t] of task_descr['decomposite_task'].entries())
+        for (var [i, t] of task_descr['subtasks'].entries())
         {
             add_template_element(in_list, t, index + 'L' + String(i));
         }
     }
 
     // save task in local storage for update need
-    sessionStorage.setItem(task_descr["descriprion"], JSON.stringify(task_descr))
+    sessionStorage.setItem(task_descr["id"], JSON.stringify(task_descr))
 
     list_to_append.append(list_elem_templ);
 };
@@ -484,6 +487,7 @@ getTaskData = function () {
 
 
     let data = {
+        "id"    :                       $("#exampleModalLabel").attr("data-taskid"),                  
         "descriprion"     :             $("#exampleFormControlTextarea1").val(),
         "priority" :                    $("#task_priority_dropdown_button").text(),
         "traking_type"  :               $("#traking_type_dropdown_button").text(),
@@ -492,7 +496,7 @@ getTaskData = function () {
         "task_begin" :                  start,
         "task_end" :                    $("#datetimeinput2").val(),
         "lost_time" :                   $("#timeinput1").val(),
-        "parent_task" :                 $("#parent_task_input").val(),
+        "decomposite_task" :            $("#exampleModalLabel").attr("data-taskid"),
         "template_intervals" :          template
     };
 
@@ -510,27 +514,17 @@ $(document).on('click', '#edit_task_button', function () {
 $(document).on('click', '#create_task_modal_save_button', function () {
     let tasks_url = get_period(tasklist_settings.type, tasklist_settings.time);
     let data = getTaskData();
+    let type = "";
 
     if ($("#create_task_modal_save_button").text() == "Update task")
-    {
-        data = JSON.stringify ({
-            "type"     :                    "edit",
-            "old_data" :                    old_data,
-            "data"     :                    data 
-        });
-    }
+        type = "PUT";
     else  
-    {
-        data = JSON.stringify ({
-            "type"     :                    "add",
-            "data"     :                    data 
-        });
-    }
+        type = "POST";
 
     $.ajax({
-        type: "POST",
+        type: type,
         url: tasks_url,
-        data: data,
+        data: JSON.stringify (data),
         success : function(tasks) {
             fill_tasks(tasks, tasks_url)
             if ($("#create_task_modal_save_button").text() == "Update task")
@@ -558,7 +552,9 @@ get_description = function(context) {
     return data;
 };
 
-fillModalWindow = function (entry) {
+fillModalWindow = function (entry) {  
+    $("#exampleModalLabel").text($("#exampleModalLabel").text() + " (" + entry["id"] + ")")
+    $("#exampleModalLabel").attr("data-taskid", entry["id"]);
     $("#exampleFormControlTextarea1").val(entry["descriprion"]);
     $("#task_priority_dropdown_button").text(entry["priority"]);
     $("#traking_type_dropdown_button").text(entry["traking_type"]);
@@ -588,7 +584,7 @@ fillModalWindow = function (entry) {
         $(".modal-body").find(".decomp-task-forms").remove();
         $(".modal-body").find(".template-task-forms").remove(); 
         add_decomposite_inpute();
-        $("#parent_task_input").val(entry["parent_task"]);
+        $("#parent_task_input").val(entry["decomposite_task"]);
     }
     else if (entry["task_type"] === "Template")
     {
@@ -608,6 +604,7 @@ fillModalWindow = function (entry) {
 };
 
 function clearModalWindow() {
+    $("#exampleFormControlTextarea1").attr("data-taskid", "");
     $("#exampleFormControlTextarea1").val("");
     $("#task_priority_dropdown_button").text("Medium");
     $("#traking_type_dropdown_button").text("Untracked");
@@ -634,19 +631,15 @@ $(function() {
             if (key == "delete")
             {
                 let tasks_url = get_period(tasklist_settings.type, tasklist_settings.time);
-                let descr = $(this).find(".descr").text();
-                let task = JSON.parse(sessionStorage.getItem(descr));
+                let id = $(this).attr("data-taskid"); //find(".list-group-item")
+                let task = JSON.parse(sessionStorage.getItem(id));
                 let data = {
-                    "desr" : descr,
-                    "datetime_start" : task['datetime_start']
+                    "id" : id,
                 };
                 $.ajax({
-                    type: "POST",
+                    type: "DELETE",
                     url: tasks_url,
-                    data: JSON.stringify ({
-                        "type"     :                    "delete",
-                        "data"     :                    data 
-                    }),
+                    data: JSON.stringify (data),
                     success : function(tasks) {
                         fill_tasks(tasks, tasks_url)
                     },
@@ -655,12 +648,8 @@ $(function() {
             }
             else if (key == "edit")
             {
-                let descr = $(this).find(".descr").text();
-                let task = JSON.parse(sessionStorage.getItem(descr));
-                old_data = {
-                    "desr" : descr,
-                    "datetime_start" : task['datetime_start']
-                };
+                let id = $(this).attr("data-taskid"); 
+                let task = JSON.parse(sessionStorage.getItem(id));
                 $("#create_task_modal").modal('show');
                 $("#create_task_modal_save_button").text("Update task")
                 fillModalWindow(task);              
@@ -668,12 +657,18 @@ $(function() {
             else if (key = "add_subtask")
             {
                 let descr = $(this).find(".descr").text();
+                let id = $(this).attr("data-taskid"); //$(this).find(".list-group-item").attr("data-taskid");
                 clearModalWindow();
                 // add decomposite task impute
-                $("#parent_task_input").val(descr);
                 $("#create_task_modal").modal('show');
                 $("#create_task_modal_save_button").text("Create task");
                 $("#task_type_dropdown_button").text("Decomposite");
+
+                $(".modal-body").find(".decomp-task-forms").remove();
+                $(".modal-body").find(".template-task-forms").remove(); 
+                add_decomposite_inpute();
+                $("#parent_task_input").val(descr);
+                $("#exampleModalLabel").attr("data-taskid", id);
             }
         },
         items: {

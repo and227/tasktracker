@@ -39,7 +39,7 @@
         <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Enter task parameters</h5>
+            <h5 class="modal-title" id="exampleModalLabel" data-taskid="">Enter task parameters</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
@@ -48,7 +48,7 @@
                 <form>
                     <div class="form-group" id="task_description_area">
                         <label for="exampleFormControlTextarea1">Task description</label>
-                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="2"></textarea>
+                        <textarea class="form-control" id="exampleFormControlTextarea1" rows="2" ></textarea>
                     </div>
                 </form>
 
@@ -208,7 +208,7 @@
     </div>
 
     <template id="list_elem_templ">
-        <li class="list-group-item d-flex align-items-center contain">
+        <li class="list-group-item d-flex align-items-center contain" data-taskid="">
             <button type="button" class="btn btn-success">Run</button>
             <div class="media-body">
                 <!-- Description -->

@@ -8,7 +8,7 @@ def fill_task_params(json_data, new_task):
     for key in json_data:
         val = json_data[key]
         # desr
-        if key == 'description':
+        if key == 'descriprion':
             new_task.descriprion = val
         # priority
         elif key == 'priority':
@@ -23,12 +23,15 @@ def fill_task_params(json_data, new_task):
         elif key == 'task_type':
             new_task.task_type = val
         elif key == 'task_begin':
-            new_task.task_begin = val
+            if val != '':
+                new_task.task_begin = val
         elif key == 'task_end':
-            new_task.task_end = val
+            if val != '':
+                new_task.task_end = val
         elif key == 'decomposite_task':
-            parent_task = Task.objects.get(descriprion=val)
-            new_task.decomposite_task = parent_task
+            if val != '':
+                # parent_task = Task.objects.get(id=val.id)
+                new_task.decomposite_task = val
 
 def fill_template_params(json_data, new_template):
     # template_statistic
@@ -70,7 +73,11 @@ class DateTimeField(serializers.DateTimeField):
         return value.strftime("%m/%d/%Y %I:%M %p")
 
     def to_internal_value(self, data):
-        return datetime.strptime(data, "%m/%d/%Y %I:%M %p")
+        try:
+            dt = datetime.strptime(data, "%m/%d/%Y %I:%M %p")
+        except Exception as e:
+            dt = ''
+        return dt
 
 
 class PriorityField(serializers.CharField):
@@ -155,12 +162,15 @@ class TimerStateField(serializers.CharField):
                 return sh
         return None  
 
+# class SelfRelativeField(serializers.ModelSerializer):
+#     def to_representation(self, value):
+#         serializer = self.parent.parent.__class__(value, context=self.context)
+#         return serializer.data
 
 class TemplateSerializer(serializers.ModelSerializer):  # HyperlinkedModelSerializer
     class Meta:
         model = Template
         fields = '__all__'
-
 
 class TaskSerializer(serializers.ModelSerializer):
     task_begin = DateTimeField(required=False)
@@ -171,6 +181,8 @@ class TaskSerializer(serializers.ModelSerializer):
     period = PeriodField(required=False)
     task_state = TaskStateField(read_only=True, required=False)
     timer_state = TimerStateField(read_only=True, required=False)
+    # decomposite_task = SelfRelativeField(many=True)
+    # decomposite_task = SelfRelativeField(required=False)
     # template_intervals = TemplateSerializer(source='template_of_set') # serializers.RelatedField
 
     class Meta:
@@ -184,6 +196,24 @@ class TaskSerializer(serializers.ModelSerializer):
             'task_state': {'required': False},
         }
 
+    # def get_validation_exclusions(self):
+    #     exclusions = super(TaskSerializer, self).get_validation_exclusions()
+    #     return exclusions + ['task_end']
+
+    # def get_fields(self):
+    #     fields = super(TaskSerializer, self).get_fields()
+    #     subtasks = Task.objects.filter(fields['decomposite_task'])
+    #     fields['decomposite_task'] = TaskSerializer(subtasks, many=True)
+    #     return fields
+
+    def to_representation(self, obj):
+        subtasks = Task.objects.filter(decomposite_task=obj)
+        if len(subtasks) > 0:
+            # ex = subtasks.values('id')
+            # self.instance.exclude(id__in=ex)
+            self.fields['subtasks'] = TaskSerializer(subtasks, many=True)      
+        return super(TaskSerializer, self).to_representation(obj)
+
     def create(self, validated_data):
         # add main task
         to_add = Task()
@@ -192,7 +222,7 @@ class TaskSerializer(serializers.ModelSerializer):
         Task.save(to_add)
 
          # add template params 
-        if validated_data['template_intervals'] != None and validated_data['template_intervals'] != '':   
+        if ('template_intervals' in validated_data) and validated_data['template_intervals'] != '':   
             if {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(validated_data['template_intervals'])):
                 to_templ = Template()
                 to_templ.template_to = to_add
@@ -219,6 +249,8 @@ class TaskSerializer(serializers.ModelSerializer):
                     template.task_end = dt1        
                     Task.save(template)
 
+        return to_add
+
     def update(self, instance, validated_data):
         # edit main task
         fill_task_params(validated_data, instance) 
@@ -230,7 +262,7 @@ class TaskSerializer(serializers.ModelSerializer):
         except Template.DoesNotExist:
             to_templ = None
 
-        if validated_data['template_intervals'] != None and validated_data['template_intervals'] != '':   
+        if ('template_intervals' in validated_data) and validated_data['template_intervals'] != '':   
             if {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(validated_data['template_intervals'])):            
                 # 1. no template need to create
                 if to_templ == None:
@@ -269,11 +301,4 @@ class TaskSerializer(serializers.ModelSerializer):
                     template.task_end = dt1        
                     Task.save(template)   
 
-    # def get_validation_exclusions(self):
-    #     exclusions = super(TaskSerializer, self).get_validation_exclusions()
-    #     return exclusions + ['task_end']
-
-    # def get_fields(self):
-    #         fields = super(TaskSerializer, self).get_fields()
-    #         fields['decomposite_task'] = TaskSerializer(many=True)
-    #         return fields
+        return instance

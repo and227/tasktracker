@@ -234,6 +234,8 @@ def get_tasks(list_type):
     else: 
         tasks = Task.objects.filter(**args)
 
+    tasks = tasks.exclude(decomposite_task__id__in=tasks.values_list('id'))
+
     # tasks = [task_to_dict(task, exclude_list, 0) for task in tasks]
     # tasks = [json.dumps(task) for task in tasks if task not in exclude_list]
 
@@ -274,7 +276,7 @@ class TaskView(APIView):
         if request.is_ajax():
             print('ajax', request.method)
             tasks = get_tasks(list_type)
-            serializer = TaskSerializer(tasks, many=True)
+            serializer = TaskSerializer(instance=tasks, many=True)
             print(3, serializer.data)
             return Response({'tasks': serializer.data})
             # return HttpResponse({'tasks': serializer.data}, content_type="application/json")
@@ -284,7 +286,7 @@ class TaskView(APIView):
     def post(self, request, list_type):
         json_data = json.loads(request.body)
         try:
-            serializer = TaskSerializer(data=json_data["data"])
+            serializer = TaskSerializer(data=json_data)
             if serializer.is_valid(raise_exception=True): # todo validation
                 serializer.save()           
         except Exception as e:
@@ -297,9 +299,8 @@ class TaskView(APIView):
     def put(self, request, list_type):
         json_data = json.loads(request.body)
         try:
-            tmp_dt = datetime.strptime(json_data["old_data"]["datetime_start"], "%m/%d/%Y %I:%M %p")
-            to_edit = Task.objects.get(descriprion=json_data["old_data"]["descriprion"], task_begin=tmp_dt)
-            serializer = TaskSerializer(instance=to_edit, data=json_data["data"], partial=True)
+            to_edit = Task.objects.get(id=json_data["id"])
+            serializer = TaskSerializer(instance=to_edit, data=json_data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
         except Exception as e:
@@ -310,12 +311,13 @@ class TaskView(APIView):
     def delete(self, request, list_type):
         json_data = json.loads(request.body)
         # delete main and template tasks
-        tmp_dt = datetime.strptime(json_data["datetime_start"], "%m/%d/%Y %I:%M %p")
-        to_del = Task.objects.filter(descriprion=json_data["descriprion"], task_begin=tmp_dt)
+        to_del = Task.objects.filter(id=json_data["id"])
         if len(to_del):
             templates = Task.objects.filter(template_of=to_del[0])
             templates.delete()
             to_del.delete()
+
+        return self.get(request, list_type)
     
 
 def task_list(request, list_type):   

@@ -20,13 +20,14 @@ class Task(models.Model):
     task_end = models.DateTimeField(default=datetime.datetime.now())
     lost_time = models.IntegerField(default=0)
     timer_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
-    decomposite_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='decomposite')
+    decomposite_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='subtasks')
     period = models.CharField(max_length=1, choices=PERIOD_TYPES, default='F')
     template_of = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='templ_of')
     task_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
 
     def __repr__(self):
         ret = {
+            'id' :                          self.id,
             'desr' :                        self.descriprion,
             'priority' :                    self.get_priority_display(),
             'datetime_start' :              self.task_begin.strftime("%m/%d/%Y %I:%M %p"),          

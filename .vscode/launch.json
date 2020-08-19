@@ -5,6 +5,7 @@
     "stopOnEntry": false,
     "pythonPath": "${config.python.pythonPath}",
     "program": "${workspaceRoot}/manage.py",
+    "justMyCode": false,
     "args": [
         "runserver",
         "--no-color",
