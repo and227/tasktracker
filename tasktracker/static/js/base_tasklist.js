@@ -22,7 +22,7 @@ var old_data = null
 var active_task = null;
 var active_context = null;
 
-add_template_element = function(list_to_append, task_descr, index) {
+add_template_element = function(list_to_append, task_descr, index, level) {
     
     let prior_class = "";
     switch(task_descr["priority"])
@@ -41,6 +41,8 @@ add_template_element = function(list_to_append, task_descr, index) {
     var template1 = $("#list_elem_templ").html();
     // Create a new row from the template
     var list_elem_templ = $(template1);
+    //margin 
+    list_elem_templ.css("marginLeft", String(2.5 * level) + '%');
     // button
     var btn = list_elem_templ.find(".btn");
     if ((task_descr["traking_type"] !== "Fixed") && (task_descr["traking_type"] !== "Period"))
@@ -68,28 +70,25 @@ add_template_element = function(list_to_append, task_descr, index) {
     list_elem_templ.find(".custom-control-input").attr("id", "defaultCheck" + index);
     list_elem_templ.find(".custom-control-label").attr("for", "defaultCheck" + index);
 
-    if (task_descr['subtasks'] !== null && task_descr['subtasks'] !== undefined && task_descr['subtasks'].length > 0)
-    {
-        in_list = list_elem_templ.children(".list-group"); //.children(".contain")
-        $("<div/>").addClass("break").insertBefore(in_list);
-        for (var [i, t] of task_descr['subtasks'].entries())
-        {
-            add_template_element(in_list, t, index + 'L' + String(i));
-        }
-    }
-
     // save task in local storage for update need
     sessionStorage.setItem(task_descr["id"], JSON.stringify(task_descr))
 
     list_to_append.append(list_elem_templ);
+
+    if (task_descr['subtasks'] !== null && task_descr['subtasks'] !== undefined && task_descr['subtasks'].length > 0)
+    {
+        for (var [i, t] of task_descr['subtasks'].entries())
+        {
+            add_template_element(list_to_append, t, index + 'L' + String(i), level + 1);
+        }
+    }
 };
 
 fill_tasks = function (tasks, tasks_url) {
     history.pushState({}, null, tasks_url);
+    console.log(JSON.stringify(tasks, null, 2));
     if (tasks["tasks"] !== undefined)
     {
-        console.log(tasks["tasks"]);
-        console.log(typeof tasks["tasks"]);
         $("#current_tasklist").empty();
         sessionStorage.clear();
         for (var [index, task] of tasks["tasks"].entries())
@@ -98,7 +97,7 @@ fill_tasks = function (tasks, tasks_url) {
             // var task_obj = JSON.parse(task)
             // console.log(task_obj);
 
-            add_template_element($("#current_tasklist"), task, String(index));
+            add_template_element($("#current_tasklist"), task, String(index), 0);
         }
     }
 };
@@ -497,7 +496,7 @@ getTaskData = function () {
         "task_end" :                    $("#datetimeinput2").val(),
         "lost_time" :                   $("#timeinput1").val(),
         "decomposite_task" :            $("#exampleModalLabel").attr("data-taskid"),
-        "template_intervals" :          template
+        "template" :                    template
     };
 
     return data;

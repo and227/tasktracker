@@ -1,3 +1,5 @@
+body { background: #c7b39b url(skyrim.jpg); }
+
 #current_tasklist .descr {
     float: left;
     text-align: center;
@@ -52,4 +54,9 @@
 
 .sublist {
     margin-top: 0 5%;
+}
+
+.list-group-item {
+    border-radius: 25px;
+    border: 2px solid #73AD21;
 }

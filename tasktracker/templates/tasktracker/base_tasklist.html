@@ -128,30 +128,6 @@
                     </div>        
                 </template>
 
-                <!-- Datetime start -->
-                <!-- <div class="mr-2 my-2">
-                    <label>Datetime start: </label>
-                </div>
-            
-                <div class="input-group date mr-2 my-2" id="datetimepicker1" data-target-input="nearest">
-                    <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker1" id="datetimeinput1"/>
-                    <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                    </div>
-                </div> -->
-                
-                <!-- Datetime end -->
-                <!-- <div class="mr-2 my-2">
-                    <label>Datetime end: </label>
-                </div>
-
-                <div class="input-group date mr-2 my-2" id="datetimepicker2" data-target-input="nearest">
-                    <input type="text" class="form-control datetimepicker-input" data-target="#datetimepicker2" id="datetimeinput2"/>
-                    <div class="input-group-append" data-target="#datetimepicker2" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                    </div>
-                </div> -->
-
                 <template id="decomposite_task">
                     <div class="decomp-task-forms mr-2 my-2">
                         <label>Parent task: </label>
@@ -160,14 +136,6 @@
                         </form>    
                     </div>
                 </template>
-
-                <!-- Decomposite task -->
-                <!-- <div class="mr-2 my-2">
-                    <label>Parent task: </label>
-                    <form class="form-inline" id="parent_task_form">
-                        <input class="form-control mr-sm-2" type="search" placeholder="parent task" id="parent_task_input">
-                    </form>    
-                </div> -->
 
                 <!-- Template --> 
                 <template id="template_task">
@@ -208,36 +176,18 @@
     </div>
 
     <template id="list_elem_templ">
-        <li class="list-group-item d-flex align-items-center contain" data-taskid="">
-            <button type="button" class="btn btn-success">Run</button>
-            <div class="media-body">
-                <!-- Description -->
-            </div>             
-            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
-                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck" unchecked>
-                <label class="custom-control-label" for="defaultCheck"></label>
-            </div>
-            <ul class="list-group pmd-list pmd-card-list pmd-list-avatar"></ul>         
-        </li>
+            <li class="list-group-item d-flex align-items-center contain" data-taskid="">
+                <button type="button" class="btn btn-success">Run</button>
+                <div class="media-body">
+                    <!-- Description -->
+                </div>             
+                <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
+                    <input class="custom-control-input" type="checkbox" value="" id="defaultCheck" unchecked>
+                    <label class="custom-control-label" for="defaultCheck"></label>
+                </div>
+                <ul class="list-group pmd-list pmd-card-list pmd-list-avatar"></ul>         
+            </li>
     </template>
-
-    <!-- <template id="list_elem_templ">
-        <li class="list-group-item d-flex align-items-center">
-            <button type="button" class="btn btn-success">Run</button>
-            <div class="media-body">
-                Description
-            </div>  
-            <div class="custom-control custom-checkbox pmd-checkbox custom-control-inline">
-                <input class="custom-control-input" type="checkbox" value="" id="defaultCheck" unchecked>
-                <label class="custom-control-label" for="defaultCheck"></label>
-            </div>
-            <div class="contain">
-                <div class="break"></div>
-                <ul class="list-group pmd-list pmd-card-list pmd-list-avatar"></ul>
-            </div>           
-        </li>
-    </template> -->
-
 
     <ul class="list-group pmd-list pmd-card-list pmd-list-avatar " id="current_tasklist">
         <!-- Empty list -->

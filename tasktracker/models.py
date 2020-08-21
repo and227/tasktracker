@@ -11,6 +11,12 @@ TIMER_STATES = (('I','Idle'), ('A','Active'), ('P','Paused'))
 TASK_STATE =  (('I','Idle'), ('P','Failed'), ('C','Complited'))
 TASK_TYPES = (('S','Simple'), ('T','Template'), ('D','Decomposite'))
 
+class Template(models.Model):
+    active_intervals = models.CharField(max_length=32, db_index=True, default='')
+    exclude_selected = models.BooleanField(default=False)
+    template_counter = models.IntegerField(default=0)
+    template_statistic = models.IntegerField(default=0)
+
 class Task(models.Model):
     descriprion = models.CharField(max_length=128, db_index=True)
     priority = models.CharField(max_length=1, choices=PRIORYITY_TYPES, default='M')
@@ -24,6 +30,7 @@ class Task(models.Model):
     period = models.CharField(max_length=1, choices=PERIOD_TYPES, default='F')
     template_of = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='templ_of')
     task_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
+    template = models.ForeignKey(to='Template', on_delete=models.SET_NULL, null=True, related_name='template_tasks')
 
     def __repr__(self):
         ret = {
@@ -54,13 +61,6 @@ class Task(models.Model):
             t = ''
 
         return self.descriprion + ' ' + self.get_priority_display() + ' ' + self.get_traking_type_display() + ' ' + t
-
-class Template(models.Model):
-    template_to = models.ForeignKey(to='Task', on_delete=models.SET_NULL, null=True, related_name='templ_to')
-    active_intervals = models.CharField(max_length=32, db_index=True, default='')
-    exclude_selected = models.BooleanField(default=False)
-    template_counter = models.IntegerField(default=0)
-    template_statistic = models.IntegerField(default=0)
 
 class Statistic(models.Model):
     date_point =  models.DateField(default=datetime.datetime.now())

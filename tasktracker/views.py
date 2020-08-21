@@ -3,7 +3,6 @@ from django.shortcuts import render
 from .models import Task, Template, Statistic, PRIORYITY_TYPES, PERIOD_TYPES, TRAKING_TYPES, TASK_TYPES
 import json
 from datetime import datetime, timezone
-import re
 
 from rest_framework.response import Response 
 from rest_framework.views import APIView
