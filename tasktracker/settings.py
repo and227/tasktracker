@@ -124,3 +124,18 @@ STATICFILES_DIRS = (
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Celery 
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULE = {
+    'second-task' : {
+        'task' : 'tasktracker.tasks.update_db_state',
+        'schedule' : 10.0
+    },
+    'thid-task' : {
+        'task' : 'tasktracker.tasks.update_statistic',
+        'schedule' : 20.0
+    }
+}

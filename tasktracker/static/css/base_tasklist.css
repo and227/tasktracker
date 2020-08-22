@@ -1,4 +1,4 @@
-body { background: #c7b39b url(skyrim.jpg); }
+body { background: url(skyrim.jpg); }
 
 #current_tasklist .descr {
     float: left;

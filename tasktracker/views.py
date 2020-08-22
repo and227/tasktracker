@@ -240,31 +240,6 @@ def get_tasks(list_type):
 
     return tasks
 
-# def get_tasks(list_type):
-#     exclude_list = []
-
-#     if list_type[0] == 'd':
-#         day, month, year = list_type[1:3], list_type[3:5], '20' + list_type[5:7]
-#         tasks = Task.objects.filter(period='D', task_begin__day=int(day), task_begin__month=int(month), task_begin__year=int(year))
-#     elif list_type[0] == 'w':
-#         week, month, year = list_type[1], list_type[2:4], '20' + list_type[4:6]
-#         tasks = Task.objects.filter(period='W', task_begin__year=int(year), task_begin_by_date__week=int(week))
-#     elif list_type[0] == 'm':
-#         month, year = list_type[1:3], '20' + list_type[3:5]
-#         tasks = Task.objects.filter(period='M', task_begin__year=int(year), task_begin__month=int(month))
-#     elif list_type[0] == 'y':
-#         year = '20' + list_type[1:3]
-#         tasks = Task.objects.filter(period='Y', task_begin__year=int(year))
-#     elif list_type[0] == 'f':
-#         tasks = Task.objects.all()
-#     elif list_type[0] == 'g':
-#         tasks = Task.objects.filter(period='G')
-
-#     tasks = [task_to_dict(task, exclude_list, 0) for task in tasks]
-#     tasks = [json.dumps(task) for task in tasks if task not in exclude_list]
-
-#     return tasks
-
 # ------------------------------------------------------------------------------  
 def general_task_list(request):
     default_tasks()

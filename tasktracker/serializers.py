@@ -72,12 +72,20 @@ def fill_task_params(json_data, new_task):
                 # parent_task = Task.objects.get(id=val.id)
                 new_task.decomposite_task = val
         elif key == 'template':
-            # add template params 
+            # add or edit template params 
             if {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(val)):
-                to_templ = Template()
+                # 1. no template need to create
+                if new_task.template == None:
+                    to_templ = Template()
+                else:
+                    to_templ = new_task.template
                 fill_template_params(val, to_templ)
                 Template.save(to_templ)
                 new_task.template = to_templ 
+            else:
+                # 3. is template, need to delete 
+                if new_task.template != None:
+                    to_templ.delete()
 
 class DateTimeField(serializers.DateTimeField):
     def to_representation(self, value):
@@ -238,42 +246,18 @@ class TaskSerializer(serializers.ModelSerializer):
         fill_task_params(validated_data, instance) 
         instance.save()
 
-        # edit template params 
-        try:
-            to_templ = Template.objects.get(template_to=instance)
-        except Template.DoesNotExist:
-            to_templ = None
-
-        if ('template_intervals' in validated_data) and validated_data['template_intervals'] != '':   
-            if {'active_intervals', 'exclude_selected', 'template_counter'}.issubset(set(validated_data['template_intervals'])):            
-                # 1. no template need to create
-                if to_templ == None:
-                    to_templ = Template()  
-                # 2. is template, change params             
-                to_templ.template_to = instance
-                active_intervalss = fill_template_params(validated_data['template_intervals'], to_templ)
-                Template.save(to_templ)
-            else:
-                print('attribute error')
-                return  
-        else:
-            # 3. is template, need to delete 
-            if to_templ != None:
-                to_templ.delete()
-                to_templ = None
-
         # delete template tasks
         templates = Task.objects.filter(template_of=instance)
         templates.delete()
 
         # add template tasks
-        if to_templ != None:
-            for interval in range(1, to_templ.template_counter + 1):
+        if instance.template != None:
+            for interval in range(1, instance.template.template_counter + 1):
                 dt = instance.task_begin
                 dt1 = instance.task_end
                 dt = dt.replace(month = dt.month + interval) 
                 dt1 = dt1.replace(month = dt1.month + interval) 
-                for point in active_intervalss:
+                for point in get_intervals(instance.template.active_intervals, instance.template.exclude_selected):
                     dt = dt.replace(day = point)  
                     dt1 = dt1.replace(day = point)
                     template = Task()

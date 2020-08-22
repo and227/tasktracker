@@ -59,8 +59,8 @@ add_template_element = function(list_to_append, task_descr, index, level) {
     // tracking
     if (task_descr["traking_type"] === "Fixed")
     {
-        media_body.append($("<span/>").addClass("start_time").text(task_descr["datetime_start"]));
-        media_body.append($("<span/>").addClass("end_time").text(task_descr["datetime_end"]));
+        media_body.append($("<span/>").addClass("start_time").text(task_descr["task_begin"]));
+        media_body.append($("<span/>").addClass("end_time").text(task_descr["task_end"]));
     }
     else if (task_descr["traking_type"] === "Period")
     {
@@ -93,10 +93,6 @@ fill_tasks = function (tasks, tasks_url) {
         sessionStorage.clear();
         for (var [index, task] of tasks["tasks"].entries())
         {
-            // console.log(typeof task);
-            // var task_obj = JSON.parse(task)
-            // console.log(task_obj);
-
             add_template_element($("#current_tasklist"), task, String(index), 0);
         }
     }
@@ -195,17 +191,6 @@ $(document).on('click', '.list-group-item button', function () {
             active_task = setInterval(function () {
                 update_timer(active_context);
             }, 1000); 
-                       
-            // $("#current_tasklist").find(".btn").each(function ()
-            // {
-            //     console.log(this);
-            //     if (this !== active_context)
-            //     {
-            //         $(this).removeClass("btn-danger");
-            //         $(this).addClass("btn-success");
-            //         $(this).text("Run"); 
-            //     }
-            // });
         }
         else 
         {
@@ -474,7 +459,8 @@ getTaskData = function () {
         }
     }
       
-    let template = ''; 
+    let template = {}; 
+    let decomposite = '';
     if ($("#task_type_dropdown_button").text() === 'Template')
     {
         template = {   
@@ -482,6 +468,10 @@ getTaskData = function () {
             "exclude_selected" :            $("#exclude_selected2").is(':checked'),
             "template_counter" :            $("#repeat_counter_form").val()
         };
+    }
+    else if ($("#task_type_dropdown_button").text() === 'Decomposite')
+    {
+        decomposite = $("#exampleModalLabel").attr("data-taskid");
     }
 
 
@@ -495,7 +485,7 @@ getTaskData = function () {
         "task_begin" :                  start,
         "task_end" :                    $("#datetimeinput2").val(),
         "lost_time" :                   $("#timeinput1").val(),
-        "decomposite_task" :            $("#exampleModalLabel").attr("data-taskid"),
+        "decomposite_task" :            decomposite,
         "template" :                    template
     };
 
@@ -552,7 +542,9 @@ get_description = function(context) {
 };
 
 fillModalWindow = function (entry) {  
-    $("#exampleModalLabel").text($("#exampleModalLabel").text() + " (" + entry["id"] + ")")
+    //let cur_name = $("#exampleModalLabel").text();
+    //cur_name.replace(/\([0-9]{3}\)/, ''); 
+    $("#exampleModalLabel").text("Enter task parameters (" + entry["id"] + ")")
     $("#exampleModalLabel").attr("data-taskid", entry["id"]);
     $("#exampleFormControlTextarea1").val(entry["descriprion"]);
     $("#task_priority_dropdown_button").text(entry["priority"]);
@@ -566,8 +558,8 @@ fillModalWindow = function (entry) {
     {
         $(".modal-body").find(".datetime-forms").remove();
         add_datetime_inpute();
-        $("#datetimeinput1").val(entry["datetime_start"]);
-        $("#datetimeinput2").val(entry["datetime_end"]);
+        $("#datetimeinput1").val(entry["task_begin"]);
+        $("#datetimeinput2").val(entry["task_end"]);
     }
     else if (entry["traking_type"] == "Period")
     {
@@ -590,10 +582,10 @@ fillModalWindow = function (entry) {
         $(".modal-body").find(".decomp-task-forms").remove();
         $(".modal-body").find(".template-task-forms").remove(); 
         add_template_inpute();
-        $("#active_days_input2").val(entry["template_intervals"]["active_intervals"]);
-        state = (entry["template_intervals"]["exclude_selected"] === 'True') ? true : false;
+        $("#active_days_input2").val(entry["template"]["active_intervals"]);
+        state = (entry["template"]["exclude_selected"] === 'True') ? true : false;
         $("#exclude_selected2").attr('checked', state);
-        $("#repeat_counter_form").val(entry["template_intervals"]["template_counter"]);
+        $("#repeat_counter_form").val(entry["template"]["template_counter"]);
     }
     else 
     {
@@ -603,6 +595,8 @@ fillModalWindow = function (entry) {
 };
 
 function clearModalWindow() {
+    $("#exampleModalLabel").text("Enter task parameters")
+    $("#exampleModalLabel").attr("data-taskid", "");
     $("#exampleFormControlTextarea1").attr("data-taskid", "");
     $("#exampleFormControlTextarea1").val("");
     $("#task_priority_dropdown_button").text("Medium");
@@ -677,38 +671,8 @@ $(function() {
         }
     });
 
-    //$('.list-group-item').on('click', function(e){
     $(document).on('click', '.list-group-item', function () {
         console.log('clicked', this, this.innerText);
-        //let check = $.contains($(this), $(".lost_time"))
-        // let check = $(this).find(".end_time .lost_time").length > 0
-        // if (check === false)
-        //     $(this).find(".end_time").append('<span class="lost_time"> (00:00:00 00:00:00) </span>');
-        // else 
-        //     $(this).find(".end_time .lost_time").remove();
+
     })    
 });
-
-//$("#current_tasklist").on( "click", function( clickE ) {
-// $(document).on('click', '.list-group-item', function (clickE) {
-//     alert(clickE.offsetX + ' ' + clickE.offsetY);
-//     console.log('clicked', this);
-//     $(this).contextMenu( { x: clickE.offsetX, y: clickE.offsetY } );
-// });
-
-// $.contextMenu({
-//     //selector: '.list-group-item', 
-//     callback: function(key, options) {
-//         var m = "clicked: " + key;
-//         window.console && console.log(m) || alert(m); 
-//     },
-//     items: {
-//         "edit": {name: "Edit", icon: "edit"},
-//         "cut": {name: "Cut", icon: "cut"},
-//         "copy": {name: "Copy", icon: "copy"},
-//         "paste": {name: "Paste", icon: "paste"},
-//         "delete": {name: "Delete", icon: "delete"},
-//         "sep1": "---------",
-//         "quit": {name: "Quit", icon: "quit"}
-//     }
-// });
