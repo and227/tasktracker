@@ -25,7 +25,7 @@ SECRET_KEY = 'g#z7cz%p85$wa)il=xfii$%@7mj9(+2u96h_m$hxqxj8yu!cb!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -77,9 +77,12 @@ WSGI_APPLICATION = 'tasktracker.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'TEST_NAME': os.path.join(os.path.dirname(__file__), 'test.db'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'tasktracker',
+        'USER': 'tasktracker_user',
+        'PASSWORD': 'fsdfsdhf44424sdf',
+        'HOST': 'localhost',
+        'POST': '',
     }
 }
 
@@ -120,10 +123,8 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 # Celery 
 CELERY_BROKER_URL = 'redis://localhost:6379'

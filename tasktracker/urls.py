@@ -23,5 +23,6 @@ urlpatterns = [
     path('tasklist/', general_task_list),
     path('tasklist/<str:list_type>/', TaskView.as_view()),
     path('calendar/', calendar_view),
+    path('admin/', admin.site.urls),
 ]
     

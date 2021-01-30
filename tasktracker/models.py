@@ -22,8 +22,8 @@ class Task(models.Model):
     priority = models.CharField(max_length=1, choices=PRIORYITY_TYPES, default='M')
     task_type = models.CharField(max_length=1, choices=TASK_TYPES, default='S')
     traking_type = models.CharField(max_length=1, choices=TRAKING_TYPES, default='U')
-    task_begin = models.DateTimeField(default=datetime.datetime.now())
-    task_end = models.DateTimeField(default=datetime.datetime.now())
+    task_begin = models.DateTimeField(default=timezone.now)
+    task_end = models.DateTimeField(default=timezone.now)
     lost_time = models.IntegerField(default=0)
     timer_state = models.CharField(max_length=1, choices=TIMER_STATES, default='I')
     decomposite_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='subtasks')
@@ -63,7 +63,7 @@ class Task(models.Model):
         return self.descriprion + ' ' + self.get_priority_display() + ' ' + self.get_traking_type_display() + ' ' + t
 
 class Statistic(models.Model):
-    date_point =  models.DateField(default=datetime.datetime.now())
+    date_point =  models.DateField(default=timezone.now)
     task_in_point = models.IntegerField(default=0)
     task_complited = models.IntegerField(default=0)
 
