@@ -247,15 +247,15 @@ def general_task_list(request):
 
 class TaskView(APIView):
     def get(self, request, list_type):
-        if request.is_ajax():
+        #if request.is_ajax():
             print('ajax', request.method)
             tasks = get_tasks(list_type)
             serializer = TaskSerializer(instance=tasks, many=True)
             print(3, serializer.data)
             return Response({'tasks': serializer.data})
             # return HttpResponse({'tasks': serializer.data}, content_type="application/json")
-        else: 
-            return render(request, 'tasktracker/base_tasklist.html')
+        #else: 
+        #    return render(request, 'tasktracker/base_tasklist.html')
 
     def post(self, request, list_type):
         json_data = json.loads(request.body)

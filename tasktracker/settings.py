@@ -25,7 +25,7 @@ SECRET_KEY = 'g#z7cz%p85$wa)il=xfii$%@7mj9(+2u96h_m$hxqxj8yu!cb!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -38,12 +38,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'tasktracker' 
+
+    'corsheaders',
+
+    'tasktracker', 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -120,11 +124,27 @@ USE_L10N = True
 USE_TZ = True
 
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
+    # os.path.join(BASE_DIR, "static"),
 )
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+
+############################
+# Cors
+############################
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_WHITELIST = (
+    "http://localhost:8080",
+    "http://localhost:8000",
+    "http://localhost:5000",
+)
+CORS_ORIGIN_REGEX_WHITELIST = (
+    "http://localhost:8080",
+    "http://localhost:8000",
+    "http://localhost:5000",
+)
 
 # Celery 
 CELERY_BROKER_URL = 'redis://localhost:6379'

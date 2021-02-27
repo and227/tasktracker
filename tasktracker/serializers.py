@@ -89,7 +89,8 @@ def fill_task_params(json_data, new_task):
 
 class DateTimeField(serializers.DateTimeField):
     def to_representation(self, value):
-        return value.strftime("%m/%d/%Y %I:%M %p")
+        unix_time = datetime.timestamp(value)*1000 #value.strftime("%m/%d/%Y %I:%M %p")
+        return unix_time
 
     def to_internal_value(self, data):
         try:
